@@ -1,0 +1,1 @@
+# CLEF-HIPE-2020-scorer

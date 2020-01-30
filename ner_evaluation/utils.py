@@ -3,11 +3,12 @@
 
 import csv
 from collections import namedtuple
+import logging
 
 Entity = namedtuple("Entity", "e_type start_offset end_offset")
 
 
-def get_all_tags(annotations):
+def get_all_gold_tags(annotations):
 
     labels = {label.split("-")[-1] for sent in annotations for label in sent}
     if "_" in labels:
@@ -16,6 +17,21 @@ def get_all_tags(annotations):
         labels.remove("O")
 
     return labels
+
+
+def sanity_check_tags(y_true_segments, tags):
+    gold_tags = {label.split("-")[-1] for seg in y_true_segments for label in seg}
+    remove_tags = set()
+    for tag in tags:
+        if tag not in gold_tags:
+            logging.info(
+                f"Tag {tag} is not covered by the gold data set. The evaluation ignores this tag."
+            )
+            remove_tags.add(tag)
+    for removal in remove_tags:
+        tags.remove(removal)
+
+    return tags
 
 
 def read_conll_annotations(fname):

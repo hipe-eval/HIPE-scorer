@@ -9,8 +9,9 @@ from .utils import (
     read_conll_annotations,
     collect_named_entities,
     collect_link_objects,
-    get_all_tags,
+    get_all_gold_tags,
     segment2labels,
+    sanity_check_tags,
 )
 
 
@@ -72,6 +73,12 @@ class Evaluator:
             "slot_error_rate": deepcopy(self.slot_error_rate),
         }
 
+    def evaluate_globally(self):
+        raise NotImplementedError
+
+    def evaluate_doc_wise(self):
+        raise NotImplementedError
+
     def evaluate(self, anno_type, eval_type, tags):
 
         try:
@@ -82,8 +89,11 @@ class Evaluator:
                 "Provided annotation column is not available for both predicted and true file"
             )
 
-        if not tags:
-            tags = get_all_tags(y_true_segments)
+        if tags:
+            logging.info(f"Given tags for the column {anno_type}: {tags}")
+            tags = sanity_check_tags(y_true_segments, tags)
+        else:
+            tags = get_all_gold_tags(y_true_segments)
 
         logging.info(f"Evaluating on {anno_type} for the following tags: {tags}")
 
@@ -118,17 +128,17 @@ class Evaluator:
 
             # Accumulate the results across segments
             for eval_schema in results:
-                # Aggregate across entity types
+                # Aggregate metrics globally
                 for metric in results[eval_schema]:
                     results[eval_schema][metric] += tmp_results[eval_schema][metric]
 
-                    # Aggregate results by entity type
+                    # Aggregate metrics by entity type
                     for e_type in tags:
                         results_per_type[e_type][eval_schema][
                             metric
                         ] += tmp_agg_results[e_type][eval_schema][metric]
 
-        # Calculate precision recall at the individual entity level
+        # Calculate precision and recall at the individual entity level
         for e_type in tags:
             results_per_type[e_type] = compute_precision_recall_wrapper(
                 results_per_type[e_type]
@@ -512,7 +522,7 @@ def compute_macro_scores(results, results_per_type):
 
         results[eval_schema]["precision_macro"] = precision_macro
         results[eval_schema]["recall_macro"] = recall_macro
-        results[eval_schema]["f1_macro (sklearn-style)"] = f1_macro_mean
+        results[eval_schema]["f1_macro"] = f1_macro_mean  # sklearn-style
         results[eval_schema]["f1_macro (recomputed from P & R)"] = f1_macro_recomp
 
     return results

@@ -8,10 +8,11 @@ Entity = namedtuple("Entity", "e_type start_offset end_offset")
 
 
 def get_all_tags(annotations):
+
     labels = {label.split("-")[-1] for sent in annotations for label in sent}
     if "_" in labels:
         labels.remove("_")
-    if "_" in labels:
+    if "O" in labels:
         labels.remove("O")
 
     return labels
@@ -30,8 +31,8 @@ def read_conll_annotations(fname):
         TokAnnotation = namedtuple("TokAnnotation", attributes)
 
         for row in reader:
-            # skip comments including meta data
-            if not row:
+            # skip empty lines and comments including meta data
+            if not list(filter(None, row)):
                 continue
             elif row[0].startswith("#"):
                 if sent_annotations:

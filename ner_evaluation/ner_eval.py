@@ -432,7 +432,7 @@ def compute_actual_possible(results):
     return results
 
 
-def compute_precision_recall(results, partial_or_type=False):
+def compute_precision_recall(results, partial=False):
     """
     Takes a result dict that has been output by compute metrics.
     Returns the results dict with precison and recall populated.
@@ -447,7 +447,9 @@ def compute_precision_recall(results, partial_or_type=False):
     partial = results["partial"]
     correct = results["correct"]
 
-    if partial_or_type:  ## TODO: check as partial is always zero in case of type
+    # in the entity type matching scenario (fuzzy),
+    # overlapping entities and entities with strict boundary matches are rewarded equally
+    if partial:
         precision = (correct + 0.5 * partial) / actual if actual > 0 else 0
         recall = (correct + 0.5 * partial) / possible if possible > 0 else 0
 
@@ -474,12 +476,12 @@ def compute_precision_recall_wrapper(results):
     results_a = {
         key: compute_precision_recall(value, True)
         for key, value in results.items()
-        if key in ["partial", "ent_type"]
+        if key in ["partial"]
     }
     results_b = {
         key: compute_precision_recall(value)
         for key, value in results.items()
-        if key in ["strict", "exact"]
+        if key in ["strict", "exact", "ent_type"]
     }
 
     # TODO: compute SER

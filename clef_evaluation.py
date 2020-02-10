@@ -14,6 +14,11 @@ import pathlib
 import json
 
 
+FINE_COLUMNS = {"NE_FINE_LIT", "NE_FINE_METO", "NE_FINE_COMP", "NE_NESTED"}
+COARSE_COLUMNS = {"NE_COARSE_LIT", "NE_COARSE_METO"}
+NEL_COLUMNS = {"NEL_LIT", "NEL_METO"}
+
+
 def parse_args():
     """Parse the arguments given with program call"""
 
@@ -56,151 +61,143 @@ def parse_args():
         choices={"nerc_fine", "nerc_coarse", "nel"},
     )
 
+    parser.add_argument(
+        "--glueing_cols",
+        required=False,
+        action="store",
+        dest="glueing_cols",
+        help="provide two columns separated by a plus (+) whose label are glued together for the evaluation (e.g. COL1_LABEL.COL2_LABEL). \
+        When glueing more than one pair, separate by comma",
+    )
+
     return parser.parse_args()
 
 
-def evaluation_nerc_fine(evaluator):
+def evaluation_wrapper(evaluator, eval_type, cols):
+    eval_global = {}
+    eval_per_tag = {}
 
-    labels = {
-        "LOC.ADD.ELEC",
-        "LOC.ADD.PHYS",
-        "LOC.ADM.NAT",
-        "LOC.ADM.REG",
-        "LOC.ADM.SUP",
-        "LOC.ADM.TOWN",
-        "LOC.FAC",
-        "LOC.ORO",
-        "LOC.PHYS.ASTRO",
-        "LOC.PHYS.GEO",
-        "LOC.PHYS.HYDRO",
-        "LOC.UNK",
-        "ORG.ADM",
-        "ORG.ENT",
-        "ORG.ENT.PRESSAGENCY",
-        "PERS.COLL",
-        "PERS.IND",
-        "PERS.IND.ARTICLEAUTHOR",
-        "PROD.DOCTR",
-        "PROD.MEDIA",
-        "TIME.DATE.ABS",
-    }
-    anno_types = {"NE_FINE_LIT", "NE_FINE_METO", "NE_FINE_COMP", "NE_NESTED"}
-
-    nerc_fine = {}
-    nerc_fine_per_tag = {}
-
-    for anno_type in anno_types:
-        nerc_fine[anno_type], nerc_fine_per_tag[anno_type] = evaluator.evaluate(
-            anno_type, eval_type="nerc", tags=None
+    for col in cols:
+        eval_global[col], eval_per_tag[col] = evaluator.evaluate(
+            col, eval_type=eval_type, tags=None, merge_lines=True
         )
 
-    return nerc_fine, nerc_fine_per_tag
+        # add aggregated stats across types as artificial tag
+        eval_per_tag[col]["ALL"] = eval_global[col]
+
+    return eval_per_tag
 
 
-def evaluation_nerc_coarse(evaluator):
+def get_results(args):
 
-    labels = {"LOC", "ORG", "PERS", "PROD", "TIME"}
-    anno_types = {"NE_COARSE_LIT", "NE_COARSE_METO"}
-
-    nerc_coarse = {}
-    nerc_coarse_per_tag = {}
-
-    for anno_type in anno_types:
-        nerc_coarse[anno_type], nerc_coarse_per_tag[anno_type] = evaluator.evaluate(
-            anno_type, eval_type="nerc", tags=labels
-        )
-
-    return nerc_coarse, nerc_coarse_per_tag
-
-
-def evaluation_nel(evaluator):
-    anno_types = {"NEL_LIT", "NEL_METO"}
-    nel = {}
-    nel_per_type = {}
-    for anno_type in anno_types:
-        nel[anno_type], nel_per_type[anno_type] = evaluator.evaluate(
-            anno_type, eval_type="nel", tags=None
-        )
-    return nel, nel_per_type
-
-
-def evaluation(args):
+    system_name = args.f_pred
 
     f_tsv = str(pathlib.Path(args.f_pred).parents[0] / "results.tsv")
     f_json = str(pathlib.Path(args.f_pred).parents[0] / "results_all.json")
-    rows_output = []
 
-    evaluator = Evaluator(args.f_gold, args.f_pred)
+    if args.glueing_cols:
+        glueing_pairs = args.glueing_cols.split(",")
+        glueing_col_pairs = [pair.split("+") for pair in glueing_pairs]
+    else:
+        glueing_col_pairs = None
 
-    header = [
+    evaluator = Evaluator(args.f_gold, args.f_pred, glueing_col_pairs)
+
+    if args.task == "nerc_fine":
+        eval_stats = evaluation_wrapper(evaluator, eval_type="nerc", cols=FINE_COLUMNS)
+        assemble_tsv_output(system_name, f_tsv, eval_stats)
+
+    elif args.task == "nerc_coarse":
+        eval_stats = evaluation_wrapper(
+            evaluator, eval_type="nerc", cols=COARSE_COLUMNS
+        )
+        assemble_tsv_output(system_name, f_tsv, eval_stats)
+
+    elif args.task == "nel":
+        eval_stats = evaluation_wrapper(evaluator, eval_type="nel", cols=NEL_COLUMNS)
+        assemble_tsv_output(
+            system_name, f_tsv, eval_stats, regimes=["fuzzy"], only_aggregated=True
+        )
+
+    with open(f_json, "w") as jsonfile:
+        json.dump(
+            eval_stats, jsonfile, indent=4,
+        )
+
+
+def assemble_tsv_output(
+    system_name, f_tsv, eval_stats, regimes=["fuzzy", "strict"], only_aggregated=False
+):
+
+    metrics = ["P", "R", "F1"]
+    figures = ["TP", "FP", "FN"]
+    aggregations = ("micro", "macro_doc")
+
+    fieldnames = [
+        "System",
         "Evaluation",
         "Label",
         "P",
         "R",
         "F1",
+        "F1_std",
+        "P_std",
+        "R_std",
         "TP",
         "FP",
         "FN",
     ]
 
-    metrics = ["precision", "recall", "f1", "correct", "spurious", "missed"]
+    rows = []
 
-    if args.task.startswith("nerc"):
-        regimes = ["fuzzy", "strict"]
-
-        if args.task == "nerc_fine":
-            eval_global, eval_per_tag = evaluation_nerc_fine(evaluator)
-
-        elif args.task == "nerc_coarse":
-            eval_global, eval_per_tag = evaluation_nerc_coarse(evaluator)
-
-        # assemble output for nerc
-        for anno_type in eval_per_tag:
-
+    for col in sorted(eval_stats):
+        for aggr in aggregations:
             for regime in regimes:
 
-                eval_regime = f"{anno_type}-micro-{regime}"
+                eval_regime = f"{col}-{aggr}-{regime}"
                 # mapping terminology fuzzy->type
                 regime = "ent_type" if regime == "fuzzy" else regime
 
-                # collect metrics per type
-                for tag in eval_per_tag[anno_type]:
-                    results = [eval_regime, tag]
+                # collect metrics
+                for tag in eval_stats[col]:
+
+                    # collect only aggregated metrics
+                    if only_aggregated and tag != "ALL":
+                        continue
+
+                    results = {}
+                    results["System"] = system_name
+                    results["Evaluation"] = eval_regime
+                    results["Label"] = tag
                     for metric in metrics:
-                        results.append(eval_per_tag[anno_type][tag][regime][metric])
+                        mapped_metric = f"{metric}_{aggr}"
+                        results[metric] = eval_stats[col][tag][regime][mapped_metric]
 
-                    rows_output.append(results)
+                    # add TP/FP/FN for micro analysis
+                    if aggr == "micro":
+                        for fig in figures:
+                            results[fig] = eval_stats[col][tag][regime][fig]
 
-                # collect aggregated metrics
-                results = [eval_regime, "ALL"]
-                for metric in metrics:
-                    results.append(eval_global[anno_type][regime][metric])
+                    if "macro" in aggr:
+                        for metric in metrics:
+                            mapped_metric = f"{metric}_{aggr}_std"
+                            results[metric + "_std"] = eval_stats[col][tag][regime][
+                                mapped_metric
+                            ]
 
-                rows_output.append(results)
+                    for metric, fig in results.items():
+                        try:
+                            results[metric] = round(fig, 3)
+                        except TypeError:
+                            # some values are empty
+                            pass
 
-    elif args.task == "nel":
-        eval_global, eval_per_tag = evaluation_nel(evaluator)
-
-        # assemble output for nel
-        for anno_type in eval_per_tag:
-            eval_regime = anno_type + "-micro-fuzzy"
-
-            # collect aggregated metrics
-            results = [eval_regime, "ALL"]
-            for metric in metrics:
-                results.append(eval_global[anno_type]["ent_type"][metric])
-            rows_output.append(results)
+                    rows.append(results)
 
     with open(f_tsv, "w") as csvfile:
-        writer = csv.writer(csvfile, delimiter="\t")
-        writer.writerow(header)
-        writer.writerows(rows_output)
-
-    results_all = {"aggregated": eval_global, "per_type": eval_per_tag}
-    with open(f_json, "w") as jsonfile:
-        json.dump(
-            results_all, jsonfile, indent=4,
-        )
+        writer = csv.DictWriter(csvfile, delimiter="\t", fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
 
 
 def main():
@@ -214,7 +211,7 @@ def main():
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
 
-    evaluation(args)
+    get_results(args)
 
 
 ################################################################################

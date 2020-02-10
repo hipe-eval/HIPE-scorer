@@ -8,63 +8,100 @@ import logging
 Entity = namedtuple("Entity", "e_type start_offset end_offset")
 
 
-def get_all_gold_tags(annotations):
+def get_all_tags(y_true):
 
-    labels = {label.split("-")[-1] for sent in annotations for label in sent}
-    if "_" in labels:
-        labels.remove("_")
-    if "O" in labels:
-        labels.remove("O")
-
-    return labels
-
-
-def sanity_check_tags(y_true_segments, tags):
-    gold_tags = {label.split("-")[-1] for seg in y_true_segments for label in seg}
-    remove_tags = set()
-    for tag in tags:
-        if tag not in gold_tags:
-            logging.info(
-                f"Tag {tag} is not covered by the gold data set. The evaluation ignores this tag."
-            )
-            remove_tags.add(tag)
-    for removal in remove_tags:
-        tags.remove(removal)
+    tags = {label.split("-")[-1] for doc in y_true for seg in doc for label in seg}
+    if "_" in tags:
+        tags.remove("_")
+    if "O" in tags:
+        tags.remove("O")
 
     return tags
 
 
-def read_conll_annotations(fname):
+def check_tag_selection(y_cand, tags_ref):
+
+    tags_cand = get_all_tags(y_cand)
+
+    remove_tags = set()
+
+    for tag in tags_ref:
+        if tag not in tags_cand:
+            logging.info(
+                f"Selected tag '{tag}' is not covered by the gold data set and ignored for in the evaluation."
+            )
+
+            remove_tags.add(tag)
+
+    return tags_cand
+
+
+def check_spurious_tags(y_true, y_pred):
+
+    tags_true = get_all_tags(y_true)
+    tags_pred = get_all_tags(y_pred)
+
+    for pred in tags_pred:
+        if pred not in tags_true:
+
+            logging.error(
+                f"Spurious entity label '{pred}' in predictions. Tag is not part of the gold standard and ignored for in the evaluation."
+            )
+
+
+def read_conll_annotations(fname, glueing_col_pairs=None):
     annotations = []
     sent_annotations = []
+    doc_annotations = []
 
     with open(fname) as csvfile:
-        reader = csv.reader(csvfile, delimiter="\t")
-        attributes = next(reader)
+        csvreader = csv.DictReader(csvfile, delimiter="\t")
+        fieldnames = csvreader.fieldnames
 
-        attributes = [attr.replace("-", "_") for attr in attributes]
+        attributes = [attr.replace("-", "_") for attr in fieldnames]
 
         TokAnnotation = namedtuple("TokAnnotation", attributes)
 
-        for row in reader:
-            # skip empty lines and comments including meta data
-            if not list(filter(None, row)):
+        for row in csvreader:
+            first_item = row[fieldnames[0]]
+            # skip empty lines
+            if not first_item:
                 continue
-            elif row[0].startswith("#"):
-                if sent_annotations:
-                    annotations.append(sent_annotations)
+            elif first_item.startswith("#"):
+                # segmenting lines
+                if first_item.startswith("# segment") and sent_annotations:
+                    doc_annotations.append(sent_annotations)
                     sent_annotations = []
-                continue
+
+                # segmenting documents
+                elif first_item.startswith("# document") and sent_annotations:
+                    annotations.append(doc_annotations)
+                    doc_annotations = []
+                # other lines starting with # are dismissed
+
             else:
-                row = [item.upper() for item in row]
+                if glueing_col_pairs:
+                    for col_1, col_2 in glueing_col_pairs:
+                        if row[col_2] != "O":
+                            _, col_1_label = row[col_1].split("-")
+                            col_2_iob, col_2_label = row[col_2].split("-")
+                            new_col_2_label = f"{col_2_iob}-{col_1_label}.{col_2_label}"
+                            row[col_2] = new_col_2_label
+
+                row = [val.upper() for key, val in row.items()]
                 tok_annot = TokAnnotation(*row)
                 sent_annotations.append(tok_annot)
+
+    # add last document and segment as well
+    if sent_annotations:
+        doc_annotations.append(sent_annotations)
+        annotations.append(doc_annotations)
 
     return annotations
 
 
-def segment2labels(sent, attribute):
-    return [getattr(tok, attribute) for tok in sent]
+def column_selector(doc, attribute):
+    return [[getattr(tok, attribute) for tok in sent] for sent in doc]
 
 
 def collect_named_entities(tokens):

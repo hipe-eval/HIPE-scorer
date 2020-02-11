@@ -70,7 +70,38 @@ def parse_args():
         When glueing more than one pair, separate by comma",
     )
 
+    parser.add_argument(
+        "-s" "--skip_check",
+        required=False,
+        action="store_true",
+        dest="skip_check",
+        help="skip check that ensures the prediction file is in line with submission requirements",
+    )
+
     return parser.parse_args()
+
+
+def enforce_filename(fname):
+
+    try:
+        f_obj = pathlib.Path(fname.lower())
+        submission = f_obj.stem
+        suffix = f_obj.suffix
+        team, bundle, lang, n_submission = submission.split("_")
+        bundle = int(bundle.lstrip("bundle"))
+
+        assert suffix == ".tsv"
+        assert lang in ("de", "fr", "en")
+        assert bundle in range(1, 6)
+
+    except (ValueError, AssertionError) as e:
+        raise e
+        raise AssertionError(
+            "Filename needs to comply with shared task requirements. "
+            "Please rename accordingly: TEAMNAME_TASKBUNDLEID_LANG_RUNNUMBER.tsv",
+        )
+
+    return submission
 
 
 def evaluation_wrapper(evaluator, eval_type, cols):
@@ -90,7 +121,10 @@ def evaluation_wrapper(evaluator, eval_type, cols):
 
 def get_results(args):
 
-    system_name = args.f_pred
+    if not args.skip_check:
+        submission = enforce_filename(args.f_pred)
+    else:
+        submission = args.f_pred
 
     f_tsv = str(pathlib.Path(args.f_pred).parents[0] / f"results_{args.task}.tsv")
     f_json = str(pathlib.Path(args.f_pred).parents[0] / f"results_{args.task}_all.json")
@@ -105,19 +139,15 @@ def get_results(args):
 
     if args.task == "nerc_fine":
         eval_stats = evaluation_wrapper(evaluator, eval_type="nerc", cols=FINE_COLUMNS)
-        assemble_tsv_output(system_name, f_tsv, eval_stats)
+        assemble_tsv_output(submission, f_tsv, eval_stats)
 
     elif args.task == "nerc_coarse":
-        eval_stats = evaluation_wrapper(
-            evaluator, eval_type="nerc", cols=COARSE_COLUMNS
-        )
-        assemble_tsv_output(system_name, f_tsv, eval_stats)
+        eval_stats = evaluation_wrapper(evaluator, eval_type="nerc", cols=COARSE_COLUMNS)
+        assemble_tsv_output(submission, f_tsv, eval_stats)
 
     elif args.task == "nel":
         eval_stats = evaluation_wrapper(evaluator, eval_type="nel", cols=NEL_COLUMNS)
-        assemble_tsv_output(
-            system_name, f_tsv, eval_stats, regimes=["fuzzy"], only_aggregated=True
-        )
+        assemble_tsv_output(submission, f_tsv, eval_stats, regimes=["fuzzy"], only_aggregated=True)
 
     with open(f_json, "w") as jsonfile:
         json.dump(
@@ -126,11 +156,11 @@ def get_results(args):
 
 
 def assemble_tsv_output(
-    system_name, f_tsv, eval_stats, regimes=["fuzzy", "strict"], only_aggregated=False
+    submission, f_tsv, eval_stats, regimes=["fuzzy", "strict"], only_aggregated=False
 ):
 
-    metrics = ["P", "R", "F1"]
-    figures = ["TP", "FP", "FN"]
+    metrics = ("P", "R", "F1")
+    figures = ("TP", "FP", "FN")
     aggregations = ("micro", "macro_doc")
 
     fieldnames = [
@@ -159,14 +189,14 @@ def assemble_tsv_output(
                 regime = "ent_type" if regime == "fuzzy" else regime
 
                 # collect metrics
-                for tag in eval_stats[col]:
+                for tag in sorted(eval_stats[col]):
 
                     # collect only aggregated metrics
                     if only_aggregated and tag != "ALL":
                         continue
 
                     results = {}
-                    results["System"] = system_name
+                    results["System"] = submission
                     results["Evaluation"] = eval_regime
                     results["Label"] = tag
                     for metric in metrics:
@@ -181,9 +211,7 @@ def assemble_tsv_output(
                     if "macro" in aggr:
                         for metric in metrics:
                             mapped_metric = f"{metric}_{aggr}_std"
-                            results[metric + "_std"] = eval_stats[col][tag][regime][
-                                mapped_metric
-                            ]
+                            results[metric + "_std"] = eval_stats[col][tag][regime][mapped_metric]
 
                     for metric, fig in results.items():
                         try:

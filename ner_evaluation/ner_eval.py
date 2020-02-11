@@ -105,10 +105,13 @@ class Evaluator:
         if tags:
             logging.info(f"Provided tags for the column {column}: {tags}")
             tags = check_tag_selection(y_true, tags)
-        else:
+        elif eval_type == "nerc":
+            # For NERC, only tags which are covered by the gold standard are considered
             tags = get_all_tags(y_true)
-
-        check_spurious_tags(y_true, y_pred)
+            check_spurious_tags(y_true, y_pred)
+        elif eval_type == "nel":
+            # For NEL, any tag in gold standard or predictions are considered
+            tags = get_all_tags(y_true) | get_all_tags(y_pred)
 
         logging.info(f"Evaluating on {column} for the following tags: {tags}")
 
@@ -123,7 +126,7 @@ class Evaluator:
             doc_results = deepcopy(self.metric_schema)
             doc_results_per_type = {e: deepcopy(self.metric_schema) for e in tags}
 
-            # merge lines as entities can stretch across two lines
+            # merge lines within a doc as entities can stretch across two lines
             if merge_lines:
                 y_true_doc = [[line for lines in y_true_doc for line in lines]]
                 y_pred_doc = [[line for lines in y_pred_doc for line in lines]]

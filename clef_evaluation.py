@@ -92,8 +92,8 @@ def get_results(args):
 
     system_name = args.f_pred
 
-    f_tsv = str(pathlib.Path(args.f_pred).parents[0] / "results.tsv")
-    f_json = str(pathlib.Path(args.f_pred).parents[0] / "results_all.json")
+    f_tsv = str(pathlib.Path(args.f_pred).parents[0] / f"results_{args.task}.tsv")
+    f_json = str(pathlib.Path(args.f_pred).parents[0] / f"results_{args.task}_all.json")
 
     if args.glueing_cols:
         glueing_pairs = args.glueing_cols.split(",")

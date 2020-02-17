@@ -144,7 +144,7 @@ Jahr	O	O	O	O	O	O	_	_	_
 in	O	O	O	O	O	O	_	_	EndOfLine|NoSpaceAfter			
 # segment_iiif_link = _												
 Winterthur	B-loc	O	B-loc.adm.town	O	O	O	Q9125	_	_	B-loc.adm.town		fuzzy: no change, strict: 1 FP
-nächsten	O	O	O	O	O	O	_	_	_	O		
+nächsten	O	O	I-loc.adm.town	O	O	O	_	_	_	O		
 Sonntag	O	O	O	O	O	O	_	_	_			
 stattfindet	O	O	O	O	O	O	_	_	NoSpaceAfter			
 .	O	O	O	O	O	O	_	_	_			

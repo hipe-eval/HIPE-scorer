@@ -57,7 +57,7 @@ class Evaluator:
             "FP": 0,
             "FN": 0,
             "P_micro": 0,
-            "recall_micro": 0,
+            "R_micro": 0,
             "F1_micro": 0,
             "P_macro_doc": [],
             "R_macro_doc": [],
@@ -559,7 +559,7 @@ def compute_macro_type_scores(results, results_per_type):
         for tag in results_per_type:
             precision_sum += results_per_type[tag][eval_schema]["P_micro"]
             recall_sum += results_per_type[tag][eval_schema]["R_micro"]
-            f1_sum += results_per_type[tag][eval_schema]["R_micro"]
+            f1_sum += results_per_type[tag][eval_schema]["F1_micro"]
 
         precision_macro = precision_sum / n_tags
         recall_macro = recall_sum / n_tags

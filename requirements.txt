@@ -1,5 +1,0 @@
-sklearn
-nltk
-sklearn_crfsuite
-pytest
-coverage

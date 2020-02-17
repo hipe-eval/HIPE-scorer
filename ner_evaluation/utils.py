@@ -132,9 +132,7 @@ def collect_named_entities(tokens):
             ent_type = token_tag[2:]
             start_offset = offset
 
-        elif ent_type != token_tag[2:] or (
-            ent_type == token_tag[2:] and token_tag[:1] == "B"
-        ):
+        elif ent_type != token_tag[2:] or (ent_type == token_tag[2:] and token_tag[:1] == "B"):
 
             end_offset = offset - 1
             named_entities.append(Entity(ent_type, start_offset, end_offset))

@@ -7,6 +7,7 @@ Script to produce the evaluation for the HIPE Shared Task
 """
 
 from ner_evaluation.ner_eval import Evaluator
+
 import argparse
 import logging
 import csv
@@ -95,7 +96,6 @@ def enforce_filename(fname):
         assert bundle in range(1, 6)
 
     except (ValueError, AssertionError) as e:
-        raise e
         raise AssertionError(
             "Filename needs to comply with shared task requirements. "
             "Please rename accordingly: TEAMNAME_TASKBUNDLEID_LANG_RUNNUMBER.tsv",

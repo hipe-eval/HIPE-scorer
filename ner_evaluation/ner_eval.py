@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 # coding: utf-8
 
+import sys
+
 import logging
 from copy import deepcopy
 import numpy as np
 
-from .utils import (
+from ner_evaluation.utils import (
     read_conll_annotations,
     collect_named_entities,
     collect_link_objects,
@@ -143,9 +145,7 @@ class Evaluator:
                     )
                 elif eval_type == "nel":
                     seg_results, seg_results_per_type = self.compute_metrics(
-                        collect_link_objects(y_true_seg),
-                        collect_link_objects(y_pred_seg),
-                        tags,
+                        collect_link_objects(y_true_seg), collect_link_objects(y_pred_seg), tags,
                     )
 
                 # accumulate overall stats
@@ -173,12 +173,8 @@ class Evaluator:
 
         # Compute overall metrics by entity type
         for e_type in tags:
-            results_per_type[e_type] = compute_precision_recall_wrapper(
-                results_per_type[e_type]
-            )
-            results_per_type[e_type] = compute_macro_doc_scores(
-                results_per_type[e_type]
-            )
+            results_per_type[e_type] = compute_precision_recall_wrapper(results_per_type[e_type])
+            results_per_type[e_type] = compute_macro_doc_scores(results_per_type[e_type])
 
         # Compute overall metrics across entity types
         results = compute_precision_recall_wrapper(results)
@@ -195,25 +191,17 @@ class Evaluator:
 
             # to compute precision dismiss documents for which no entities were predicted
             if actual != 0:
-                results[eval_schema]["P_macro_doc"].append(
-                    doc_results[eval_schema]["P_micro"]
-                )
+                results[eval_schema]["P_macro_doc"].append(doc_results[eval_schema]["P_micro"])
             # to compute recall dismiss documents for which no entities exists in gold standard
             if possible != 0:
-                results[eval_schema]["R_macro_doc"].append(
-                    doc_results[eval_schema]["R_micro"]
-                )
+                results[eval_schema]["R_macro_doc"].append(doc_results[eval_schema]["R_micro"])
             # to compute recall dismiss documents for which no entities exists in gold standard
             if possible != 0 and actual != 0:
-                results[eval_schema]["F1_macro_doc"].append(
-                    doc_results[eval_schema]["F1_micro"]
-                )
+                results[eval_schema]["F1_macro_doc"].append(doc_results[eval_schema]["F1_micro"])
 
         return results
 
-    def accumulate_stats(
-        self, results, results_per_type, tmp_results, tmp_results_per_type
-    ):
+    def accumulate_stats(self, results, results_per_type, tmp_results, tmp_results_per_type):
 
         for eval_schema in results:
             # Aggregate metrics across entity types
@@ -222,9 +210,9 @@ class Evaluator:
 
                 # Aggregate metrics by entity type
                 for e_type in results_per_type:
-                    results_per_type[e_type][eval_schema][
-                        metric
-                    ] += tmp_results_per_type[e_type][eval_schema][metric]
+                    results_per_type[e_type][eval_schema][metric] += tmp_results_per_type[e_type][
+                        eval_schema
+                    ][metric]
 
         return results, results_per_type
 
@@ -300,18 +288,10 @@ class Evaluator:
                         # evaluation["slot_error_rate"]["substitution_type"] += 1
 
                         # aggregated by entity type results
-                        evaluation_agg_entities_type[true.e_type]["strict"][
-                            "incorrect"
-                        ] += 1
-                        evaluation_agg_entities_type[true.e_type]["ent_type"][
-                            "incorrect"
-                        ] += 1
-                        evaluation_agg_entities_type[true.e_type]["partial"][
-                            "correct"
-                        ] += 1
-                        evaluation_agg_entities_type[true.e_type]["exact"][
-                            "correct"
-                        ] += 1
+                        evaluation_agg_entities_type[true.e_type]["strict"]["incorrect"] += 1
+                        evaluation_agg_entities_type[true.e_type]["ent_type"]["incorrect"] += 1
+                        evaluation_agg_entities_type[true.e_type]["partial"]["correct"] += 1
+                        evaluation_agg_entities_type[true.e_type]["exact"]["correct"] += 1
 
                         true_which_overlapped_with_pred.append(true)
                         found_overlap = True
@@ -344,18 +324,10 @@ class Evaluator:
                             # evaluation["slot_error_rate"]["substitution_span"] += 1
 
                             # aggregated by entity type results
-                            evaluation_agg_entities_type[true.e_type]["strict"][
-                                "incorrect"
-                            ] += 1
-                            evaluation_agg_entities_type[true.e_type]["ent_type"][
-                                "correct"
-                            ] += 1
-                            evaluation_agg_entities_type[true.e_type]["partial"][
-                                "partial"
-                            ] += 1
-                            evaluation_agg_entities_type[true.e_type]["exact"][
-                                "incorrect"
-                            ] += 1
+                            evaluation_agg_entities_type[true.e_type]["strict"]["incorrect"] += 1
+                            evaluation_agg_entities_type[true.e_type]["ent_type"]["correct"] += 1
+                            evaluation_agg_entities_type[true.e_type]["partial"]["partial"] += 1
+                            evaluation_agg_entities_type[true.e_type]["exact"]["incorrect"] += 1
 
                             break
 
@@ -374,18 +346,10 @@ class Evaluator:
                             # aggregated by entity type results
                             # Results against the true entity
 
-                            evaluation_agg_entities_type[true.e_type]["strict"][
-                                "incorrect"
-                            ] += 1
-                            evaluation_agg_entities_type[true.e_type]["partial"][
-                                "partial"
-                            ] += 1
-                            evaluation_agg_entities_type[true.e_type]["ent_type"][
-                                "incorrect"
-                            ] += 1
-                            evaluation_agg_entities_type[true.e_type]["exact"][
-                                "incorrect"
-                            ] += 1
+                            evaluation_agg_entities_type[true.e_type]["strict"]["incorrect"] += 1
+                            evaluation_agg_entities_type[true.e_type]["partial"]["partial"] += 1
+                            evaluation_agg_entities_type[true.e_type]["ent_type"]["incorrect"] += 1
+                            evaluation_agg_entities_type[true.e_type]["exact"]["incorrect"] += 1
 
                             break
 
@@ -460,9 +424,9 @@ class Evaluator:
             # level results.
             for eval_type in entity_level:
                 # if eval_type != "slot_error_rate":
-                evaluation_agg_entities_type[entity_type][
-                    eval_type
-                ] = compute_actual_possible(entity_level[eval_type])
+                evaluation_agg_entities_type[entity_type][eval_type] = compute_actual_possible(
+                    entity_level[eval_type]
+                )
 
         return evaluation, evaluation_agg_entities_type
 
@@ -546,9 +510,7 @@ def compute_precision_recall(results, partial=False):
     results["P_micro"] = precision
     results["R_micro"] = recall
     results["F1_micro"] = (
-        2 * (precision * recall) / (precision + recall)
-        if (precision + recall) > 0
-        else 0
+        2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
     )
 
     return results
@@ -623,12 +585,8 @@ def compute_macro_doc_scores(results):
     for eval_schema in results:
         for metric in metrics:
             vals = results[eval_schema][metric]
-            results[eval_schema][metric] = (
-                float(np.mean(vals)) if len(vals) > 0 else None
-            )
-            results[eval_schema][metric + "_std"] = (
-                float(np.std(vals)) if len(vals) > 0 else None
-            )
+            results[eval_schema][metric] = float(np.mean(vals)) if len(vals) > 0 else None
+            results[eval_schema][metric + "_std"] = float(np.std(vals)) if len(vals) > 0 else None
 
     return results
 

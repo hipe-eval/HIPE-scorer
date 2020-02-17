@@ -33,10 +33,10 @@ class TestEvaluationResults(unittest.TestCase):
         )
         eval_per_tag["ALL"] = eval_global
 
-        with open("ref_results_nerc_fine_all.json", "w") as jsonfile:
-            json.dump(
-                eval_per_tag, jsonfile, indent=4,
-            )
+        # with open("ref_results_nerc_fine_all.json", "w") as jsonfile:
+        #     json.dump(
+        #         eval_per_tag, jsonfile, indent=4,
+        #     )
 
         self._compare_eval_results(ref_path, eval_per_tag)
 
@@ -48,10 +48,10 @@ class TestEvaluationResults(unittest.TestCase):
         )
         eval_per_tag["ALL"] = eval_global
 
-        with open("ref_results_nel_all.json", "w") as jsonfile:
-            json.dump(
-                eval_per_tag, jsonfile, indent=4,
-            )
+        # with open("ref_results_nel_all.json", "w") as jsonfile:
+        #     json.dump(
+        #         eval_per_tag, jsonfile, indent=4,
+        #     )
 
         self._compare_eval_results(ref_path, eval_per_tag)
 

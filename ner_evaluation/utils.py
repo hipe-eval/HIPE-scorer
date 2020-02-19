@@ -8,6 +8,25 @@ import logging
 Entity = namedtuple("Entity", "e_type start_offset end_offset")
 
 
+class TokAnnotation():
+    def __init__(self, properties):
+        self.fieldnames = [col for col in properties]
+
+        # columns are set as class variables
+        for k, v in properties.items():
+            if k.upper() != 'TOKEN':
+                v = v.upper()
+            setattr(self, k, v)
+
+    def __repr__(self):
+        return "TokAnnotation({!r})".format(self.get_values())
+
+    def get_values(self):
+        return {k: v for k, v in self.__dict__.items() if k in self.fieldnames}
+
+
+
+
 def get_all_tags(y_true):
 
     tags = {label.split("-")[-1] for doc in y_true for seg in doc for label in seg}
@@ -49,7 +68,7 @@ def check_spurious_tags(y_true, y_pred):
             )
 
 
-def read_conll_annotations(fname, glueing_col_pairs=None):
+def read_conll_annotations(fname, glueing_col_pairs=None, structure_only=False):
     annotations = []
     sent_annotations = []
     doc_annotations = []
@@ -57,10 +76,6 @@ def read_conll_annotations(fname, glueing_col_pairs=None):
     with open(fname) as csvfile:
         csvreader = csv.DictReader(csvfile, delimiter="\t")
         fieldnames = csvreader.fieldnames
-
-        attributes = [attr.replace("-", "_") for attr in fieldnames]
-
-        TokAnnotation = namedtuple("TokAnnotation", attributes)
 
         for row in csvreader:
             first_item = row[fieldnames[0]]
@@ -75,8 +90,11 @@ def read_conll_annotations(fname, glueing_col_pairs=None):
 
                 # segmenting documents
                 elif first_item.startswith("# document") and sent_annotations:
+                    doc_annotations.append(sent_annotations)
                     annotations.append(doc_annotations)
+                    sent_annotations = []
                     doc_annotations = []
+
                 # other lines starting with # are dismissed
 
             else:
@@ -88,8 +106,13 @@ def read_conll_annotations(fname, glueing_col_pairs=None):
                             new_col_2_label = f"{col_2_iob}-{col_1_label}.{col_2_label}"
                             row[col_2] = new_col_2_label
 
-                row = [val.upper() for key, val in row.items()]
-                tok_annot = TokAnnotation(*row)
+
+                if structure_only:
+                    token = row[fieldnames[0]]
+                    row = {k: '' for k in row}
+                    row[fieldnames[0]] = token
+
+                tok_annot = TokAnnotation(row)
                 sent_annotations.append(tok_annot)
 
     # add last document and segment as well

@@ -45,38 +45,36 @@ Moreover, the figures are computed in aggregate (Label = ALL) and per token-type
 #### Available figures and metrics
 For any of the evaluation schemes described in [David Batista's blog post](http://www.davidsbatista.net/blog/2018/05/09/Named_Entity_Evaluation/), the evaluation provides the following figures:
 
-`correct`
-`incorrect`
-`partial`
-`missed`
-`spurious`
-`possible`
-`actual`
-`TP`
-`FP`
-`FN`
-`P_micro`
-`R_micro`
-`F1_micro`
-`P_macro_doc`
-`R_macro_doc`
-`F1_macro_doc`
-`P_macro_doc_std`
-`R_macro_doc_std`
-`F1_macro_doc_std`
-`P_macro`
-`R_macro`
-`F1_macro`
-`F1_macro (recomputed from P & R)`
+- `correct`
+- `incorrect`
+- `partial`
+- `missed`
+- `spurious`
+- `possible`
+- `actual`
+- `TP`
+- `FP`
+- `FN`
+- `P_micro`
+- `R_micro`
+- `F1_micro`
+- `P_macro_doc`
+- `R_macro_doc`
+- `F1_macro_doc`
+- `P_macro_doc_std`
+- `R_macro_doc_std`
+- `F1_macro_doc_std`
+- `P_macro`
+- `R_macro`
+- `F1_macro`
+- `F1_macro (recomputed from P & R)`
 
 
 
 ## Baseline
-We report baseline scores Named Entity Recognition and Classification (NERC) tasks trained with a basic CRF model. The model uses surface information only and dismisses the segmentation structure as it treats any particular document as a single, long sentence. 
+We report baseline scores Named Entity Recognition and Classification (NERC) tasks trained with a basic CRF model. The model uses surface information only and dismisses the segmentation structure as it treats any particular document as a single, long sentence. The model is trained on the official training data and evaluated on the development set.
 
-The model is trained on the official training data and evaluated on the development set.
-
-To train and evaluate a baseline model for the  *NERC Coarse-grained* task, you can run the following command:
+To train and evaluate a baseline model for the *NERC Coarse-grained* task, you can run the following command:
 
 ```python baseline.py --train TRAIN.tsv --dev DEV.tsv  --pred OUTPUT.tsv --cols NE-COARSE-LIT,NE-COARSE-METO --eval nerc_coarse```
 

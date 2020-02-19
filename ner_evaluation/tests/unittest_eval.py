@@ -29,7 +29,7 @@ class TestEvaluationResults(unittest.TestCase):
         ref_path = "ner_evaluation/tests/results/ref_results_nerc_fine_all.json"
 
         eval_global, eval_per_tag = self.evaluator.evaluate(
-            "NE_FINE_LIT", eval_type="nerc", tags=None, merge_lines=True
+            "NE-FINE-LIT", eval_type="nerc", tags=None, merge_lines=True
         )
         eval_per_tag["ALL"] = eval_global
 
@@ -44,7 +44,7 @@ class TestEvaluationResults(unittest.TestCase):
         ref_path = "ner_evaluation/tests/results/ref_results_nel_all.json"
 
         eval_global, eval_per_tag = self.evaluator.evaluate(
-            "NEL_LIT", eval_type="nel", tags=None, merge_lines=True
+            "NEL-LIT", eval_type="nel", tags=None, merge_lines=True
         )
         eval_per_tag["ALL"] = eval_global
 

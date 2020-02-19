@@ -26,17 +26,17 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        "-g",
-        "--file_gold",
+        "-r",
+        "--ref",
         required=True,
         action="store",
-        dest="f_gold",
+        dest="f_ref",
         help="path to gold standard file in CONNL-U format",
     )
 
     parser.add_argument(
         "-p",
-        "--file_pred",
+        "--pred",
         required=True,
         action="store",
         dest="f_pred",
@@ -136,7 +136,7 @@ def get_results(args):
     else:
         glueing_col_pairs = None
 
-    evaluator = Evaluator(args.f_gold, args.f_pred, glueing_col_pairs)
+    evaluator = Evaluator(args.f_ref, args.f_pred, glueing_col_pairs)
 
     if args.task == "nerc_fine":
         eval_stats = evaluation_wrapper(evaluator, eval_type="nerc", cols=FINE_COLUMNS)

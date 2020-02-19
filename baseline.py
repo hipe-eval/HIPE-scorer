@@ -183,7 +183,7 @@ def pipeline(args):
 
     # evaluating
     os.system(
-        f"python clef_evaluation.py -g {args.f_dev} -p {args.f_pred} -t {args.eval} --skip_check"
+        f"python clef_evaluation.py -r {args.f_dev} -p {args.f_pred} -t {args.eval} --skip_check"
     )
 
 

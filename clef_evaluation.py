@@ -15,9 +15,9 @@ import pathlib
 import json
 
 
-FINE_COLUMNS = {"NE_FINE_LIT", "NE_FINE_METO", "NE_FINE_COMP", "NE_NESTED"}
-COARSE_COLUMNS = {"NE_COARSE_LIT", "NE_COARSE_METO"}
-NEL_COLUMNS = {"NEL_LIT", "NEL_METO"}
+FINE_COLUMNS = {"NE-FINE-LIT", "NE-FINE-METO", "NE-FINE-COMP", "NE-NESTED"}
+COARSE_COLUMNS = {"NE-COARSE-LIT", "NE-COARSE-METO"}
+NEL_COLUMNS = {"NEL-LIT", "NEL-METO"}
 
 
 def parse_args():
@@ -72,7 +72,8 @@ def parse_args():
     )
 
     parser.add_argument(
-        "-s" "--skip_check",
+        "-s",
+        "--skip_check",
         required=False,
         action="store_true",
         dest="skip_check",

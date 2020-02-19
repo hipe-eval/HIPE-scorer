@@ -3,6 +3,7 @@
 
 import sys
 
+
 import logging
 from copy import deepcopy
 import numpy as np
@@ -91,8 +92,10 @@ class Evaluator:
         data_format_true = [[len(line) for line in doc] for doc in self.true]
         data_format_pred = [[len(line) for line in doc] for doc in self.pred]
 
-        if data_format_true != data_format_pred:
-            raise ValueError("Data mismatch between true and prediction dataset")
+        try:
+            assert data_format_true == data_format_pred
+        except AssertionError:
+            raise AssertionError("Data mismatch between true and prediction dataset")
 
     def evaluate(self, column, eval_type, tags, merge_lines=False):
 

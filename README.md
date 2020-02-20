@@ -4,18 +4,31 @@ CLEF-HIPE-2020-scorer is a python module for evaluating Named Entity Recognition
 
 The NERC evaluation goes beyond a token-based schema and considers entities as the unit of reference. An entity is defined as being of a particular type with a token onset as well as an offset. Following this definition, various NERC system outcomes may exist regarding correct entity types and boundaries when comparing the system response to the gold standard. The task of named entity evaluation is described in detail in the [original blog post](http://www.davidsbatista.net/blog/2018/05/09/Named_Entity_Evaluation/) by [David Batista](https://github.com/davidsbatista). The present scorer extends the code in the [original repository](https://github.com/davidsbatista/NER-Evaluation), which accompanied the blog post.
 
-In the HIPE shared task context, NERC is evaluated in terms of macro and micro Precision, Recall, F1-measure. Two evaluation scenarios are considered: strict (exact boundary matching) and relaxed (fuzzy boundary matching). 
+### Metrics
 
+In the HIPE shared task context, NERC is evaluated in terms of **macro and micro Precision, Recall, F1-measure**. Two evaluation scenarios are considered: **strict** (exact boundary matching) and **relaxed** (fuzzy boundary matching). 
+
+Each column is evaluated independently, according to the following metrics:
+
+- Micro average P, R, F1 at entity level (not at token level), i.e. consideration of all true positives, false positives, true negatives and false negative over all documents. 
+  - strict (exact boundary matching) and fuzzy (at least 1 token overlap).
+  - separately per type and cumulative for all types.
+  
+- Document-level macro average P, R, F1 at entity level (not on token level). i.e. average of separate micro evaluation on each individual document.
+  - strict and fuzzy
+  - separately per type and cumulative for all types
+  
 Our definition of macro differs from the usual one, and macro measures are computed as aggregates on document-level instead of entity-type level. Specifically, macro measures average the corresponding micro scores across all the documents, accounting for (historical) variance in document length and not for class imbalances.
 
-In the strict scenario, predicting wrong boundaries leads to severe punishment of one false negative (entity present in the gold standard but not predicted by the system) and one false positive (predicted entity by the system but not present in the gold standard). Although this may be severe, we keep this metric in line with [CoNLL](https://www.clips.uantwerpen.be/conll2000/chunking/output.html) and refer to the fuzzy scenario if the boundaries of an entity are considered as less important.
+
+Note that in the strict scenario, predicting wrong boundaries leads to severe punishment of one false negative (entity present in the gold standard but not predicted by the system) and one false positive (predicted entity by the system but not present in the gold standard). Although this may be severe, we keep this metric in line with [CoNLL](https://www.clips.uantwerpen.be/conll2000/chunking/output.html) and refer to the fuzzy scenario if the boundaries of an entity are considered as less important.
 
 The evaluation for NEL works similarly as for NERC. The link of an entity is interpreted as a label. As there is no IOB-tagging, a consecutive row of identical links is considered as a single entity.  In terms of boundaries, NEL is only evaluated according to the fuzzy scenario. Thus, to get counted as correct,  the system response needs only one overlapping link label with the gold standard. 
 
 The Slot Error Rate (SER) is dropped for the shared task evaluation.
 
 
-## Evaluation
+## Scorer
 To evaluate the predictions of your system on the dev set, you can run the following command:
 
 ```python clef_evaluation.py --ref DEVSET.tsv --pred PREDICTIONS.tsv --task TASK```

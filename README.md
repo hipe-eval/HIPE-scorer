@@ -63,8 +63,8 @@ For any of the evaluation schemes, the evaluation provides the following figures
 - `partial`
 - `missed`
 - `spurious`
-- `possible`
-- `actual`
+- `possible` (=number of annotations in the gold standard)
+- `actual` (=number of annotations predicted by the system)
 - `TP`
 - `FP`
 - `FN`

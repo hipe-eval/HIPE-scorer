@@ -26,7 +26,7 @@ Note that in the strict scenario, predicting wrong boundaries leads to severe pu
 
 The Slot Error Rate (SER) is dropped for the shared task evaluation.
 
-#### EL
+#### Entity Linking
 
 The evaluation for NEL works similarly as for NERC. The link of an entity is interpreted as a label. As there is no IOB-tagging, a consecutive row of identical links is considered as a single entity. In terms of boundaries, NEL is only evaluated according to the fuzzy scenario. Thus, to get counted as correct, the system response needs only one overlapping link label with the gold standard. 
 

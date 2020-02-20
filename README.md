@@ -6,7 +6,9 @@ The NERC evaluation goes beyond a token-based schema and considers entities as t
 
 ### Metrics
 
-In the HIPE shared task context, NERC is evaluated in terms of **macro and micro Precision, Recall, F1-measure**. Two evaluation scenarios are considered: **strict** (exact boundary matching) and **relaxed** (fuzzy boundary matching). 
+#### NERC
+
+NERC is evaluated in terms of **macro and micro Precision, Recall, F1-measure**. Two evaluation scenarios are considered: **strict** (exact boundary matching) and **relaxed** (fuzzy boundary matching). 
 
 Each column is evaluated independently, according to the following metrics:
 
@@ -23,7 +25,9 @@ Our definition of macro differs from the usual one, and macro measures are compu
 
 Note that in the strict scenario, predicting wrong boundaries leads to severe punishment of one false negative (entity present in the gold standard but not predicted by the system) and one false positive (predicted entity by the system but not present in the gold standard). Although this may be severe, we keep this metric in line with [CoNLL](https://www.clips.uantwerpen.be/conll2000/chunking/output.html) and refer to the fuzzy scenario if the boundaries of an entity are considered as less important.
 
-The evaluation for NEL works similarly as for NERC. The link of an entity is interpreted as a label. As there is no IOB-tagging, a consecutive row of identical links is considered as a single entity.  In terms of boundaries, NEL is only evaluated according to the fuzzy scenario. Thus, to get counted as correct,  the system response needs only one overlapping link label with the gold standard. 
+#### EL
+
+The evaluation for NEL works similarly as for NERC. The link of an entity is interpreted as a label. As there is no IOB-tagging, a consecutive row of identical links is considered as a single entity. In terms of boundaries, NEL is only evaluated according to the fuzzy scenario. Thus, to get counted as correct, the system response needs only one overlapping link label with the gold standard. 
 
 The Slot Error Rate (SER) is dropped for the shared task evaluation.
 

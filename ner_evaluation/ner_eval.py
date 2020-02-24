@@ -27,12 +27,17 @@ logging.basicConfig(
 
 
 class Evaluator:
-    def __init__(self, f_true, f_pred, glueinng_cols=None):
+    def __init__(self, f_true, f_pred, glueing_cols=None):
         """
         """
 
-        self.true = read_conll_annotations(f_true, glueinng_cols)
-        self.pred = read_conll_annotations(f_pred, glueinng_cols)
+        self.true = read_conll_annotations(f_true, glueing_cols)
+        self.pred = read_conll_annotations(f_pred, glueing_cols)
+
+        if len(self.true) != len(self.pred) and len(self.pred) == 1:
+            # try to automatically reconstruct the segmentation of the predictions
+            logging.info("Reconstructing the segmentation of the predictions.")
+            self.reconstruct_segmentation()
 
         self.n_docs_true = len(self.true)
         self.n_docs_pred = len(self.pred)
@@ -96,6 +101,40 @@ class Evaluator:
             assert data_format_true == data_format_pred
         except AssertionError:
             raise AssertionError("Data mismatch between true and prediction dataset")
+
+    def reconstruct_segmentation(self):
+        """
+        Restructure the flat segmentation of the system annotations.
+
+        While the content remains unchanged, the system response is properly
+        restructured into documents and sentences according to the structure of the gold annotation.
+        """
+
+        sents_pred = []
+        docs_pred = []
+        tok_pos_start = 0
+
+        for i_doc_true, docs_true in enumerate(self.true):
+            for doc_true in docs_true:
+                n_doc_sent_true = len(doc_true)
+                tok_pos_end = tok_pos_start + n_doc_sent_true
+                sent_pred = self.pred[0][0][tok_pos_start:tok_pos_end]
+                toks_pred = [tok.TOKEN for tok in sent_pred]
+                toks_true = [tok.TOKEN for tok in doc_true]
+                if toks_true != toks_pred:
+                    raise AssertionError(
+                        "The prediction file is not in line with the gold standard. "
+                        + "The attempt to reconstruct the segmentation failed. "
+                        + f"The mismatch occured in document {i_doc_true + 1} regarding the gold standard and at token {tok_pos_start +1 } regarding the prediction file."
+                    )
+
+                sents_pred.append(sent_pred)
+                tok_pos_start += n_doc_sent_true
+
+            docs_pred.append(sents_pred)
+            sents_pred = []
+
+        self.pred = docs_pred
 
     def evaluate(self, column, eval_type, tags, merge_lines=False):
 

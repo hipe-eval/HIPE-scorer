@@ -13,6 +13,7 @@ import argparse
 
 
 from ner_evaluation.utils import *
+from clef_evaluation import *
 
 
 def parse_args():
@@ -152,18 +153,18 @@ def write_predictions(fname, pred, dev):
                 tok_pos_start += len(sent)
 
 
-def pipeline(args):
+def pipeline(f_train, f_pred, f_dev, cols, eval_task):
 
     # get data
-    train = read_conll_annotations(args.f_train)
-    dev = read_conll_annotations(args.f_dev)
-    pred = read_conll_annotations(args.f_dev, structure_only=True)
+    train = read_conll_annotations(f_train)
+    dev = read_conll_annotations(f_dev)
+    pred = read_conll_annotations(f_dev, structure_only=True)
 
     # flatten documents to represent an entire document as a single sentence
     train = [[tok for sent in doc for tok in sent] for doc in train]
     pred = [[tok for sent in doc for tok in sent] for doc in pred]
 
-    for col in args.cols.split(","):
+    for col in cols.split(","):
 
         # preprocessing
         X_train, y_train = prepare_data(train, col)
@@ -179,14 +180,11 @@ def pipeline(args):
         y_pred = crf.predict(X_pred)
         pred = collect_predictions(pred, col, y_pred)
 
-    write_predictions(args.f_pred, pred, dev)
+    write_predictions(f_pred, pred, dev)
 
-    # evaluating
-    os.system(
-        f"python clef_evaluation.py -r {args.f_dev} -p {args.f_pred} -t {args.eval} --skip_check"
-    )
+    get_results(f_dev, f_pred, eval_task)
 
 
 if __name__ == "__main__":
     args = parse_args()
-    pipeline(args)
+    pipeline(args.f_train, args.f_pred, args.f_dev, args.cols, args.eval)

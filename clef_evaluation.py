@@ -102,7 +102,7 @@ def enforce_filename(fname):
             "Please rename accordingly: TEAMNAME_TASKBUNDLEID_LANG_RUNNUMBER.tsv",
         )
 
-    return submission
+    return submission, lang
 
 
 def evaluation_wrapper(evaluator, eval_type, cols):
@@ -120,33 +120,36 @@ def evaluation_wrapper(evaluator, eval_type, cols):
     return eval_per_tag
 
 
-def get_results(args):
+def get_results(
+    f_ref, f_pred, task, skip_check=False, glueing_cols=None,
+):
 
-    if not args.skip_check:
-        submission = enforce_filename(args.f_pred)
+    if not skip_check:
+        submission, lang = enforce_filename(f_pred)
     else:
-        submission = args.f_pred
+        submission = f_pred
+        language = "LANG"
 
-    f_tsv = str(pathlib.Path(args.f_pred).parents[0] / f"results_{args.task}.tsv")
-    f_json = str(pathlib.Path(args.f_pred).parents[0] / f"results_{args.task}_all.json")
+    f_tsv = str(pathlib.Path(f_pred).parents[0] / f"results_{task}_{lang}.tsv")
+    f_json = str(pathlib.Path(f_pred).parents[0] / f"results_{task}_{lang}_all.json")
 
-    if args.glueing_cols:
-        glueing_pairs = args.glueing_cols.split(",")
+    if glueing_cols:
+        glueing_pairs = glueing_cols.split(",")
         glueing_col_pairs = [pair.split("+") for pair in glueing_pairs]
     else:
         glueing_col_pairs = None
 
-    evaluator = Evaluator(args.f_ref, args.f_pred, glueing_col_pairs)
+    evaluator = Evaluator(f_ref, f_pred, glueing_col_pairs)
 
-    if args.task == "nerc_fine":
+    if task == "nerc_fine":
         eval_stats = evaluation_wrapper(evaluator, eval_type="nerc", cols=FINE_COLUMNS)
         assemble_tsv_output(submission, f_tsv, eval_stats)
 
-    elif args.task == "nerc_coarse":
+    elif task == "nerc_coarse":
         eval_stats = evaluation_wrapper(evaluator, eval_type="nerc", cols=COARSE_COLUMNS)
         assemble_tsv_output(submission, f_tsv, eval_stats)
 
-    elif args.task == "nel":
+    elif task == "nel":
         eval_stats = evaluation_wrapper(evaluator, eval_type="nel", cols=NEL_COLUMNS)
         assemble_tsv_output(submission, f_tsv, eval_stats, regimes=["fuzzy"], only_aggregated=True)
 
@@ -240,7 +243,7 @@ def main():
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
 
-    get_results(args)
+    get_results(args.f_ref, args.f_pred, args.task, args.skip_check, args.glueing_cols)
 
 
 ################################################################################

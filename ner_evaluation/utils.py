@@ -61,17 +61,18 @@ def check_tag_selection(y_cand: list, tags_ref: list):
 
     tags_cand = get_all_tags(y_cand)
 
-    remove_tags = set()
+    clean_tags = set()
 
-    for tag in tags_ref:
-        if tag not in tags_cand:
+    for tag in tags_cand:
+        if tag not in tags_ref:
             logging.info(
                 f"Selected tag '{tag}' is not covered by the gold data set and ignored for in the evaluation."
             )
 
-            remove_tags.add(tag)
+        else:
+            clean_tags.add(tag)
 
-    return tags_cand
+    return clean_tags
 
 
 

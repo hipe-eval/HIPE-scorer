@@ -28,7 +28,7 @@ logging.basicConfig(
 
 
 class Evaluator:
-    def __init__(self, f_true, f_pred, glueing_cols=None):
+    def __init__(self, f_true, f_pred, glueing_cols=[]):
         """
         """
 

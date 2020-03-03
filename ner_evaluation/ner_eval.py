@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 # coding: utf-8
 
-import sys
+"""
+The official evaluation module for the CLEF-HIPE-2020 shared task.
+"""
 
 
 import logging
@@ -28,8 +30,23 @@ logging.basicConfig(
 
 
 class Evaluator:
-    def __init__(self, f_true, f_pred, glueing_cols=[]):
+    def __init__(self, f_true, f_pred, glueing_cols=None):
         """
+        An Evaluator evalatues the system response according to the
+        gold standard.
+
+        Both files (gold/sytem) need to be aligned on a token level.
+        Any comment lines may be omitted, and, in this case, the segmentation
+        into lines and documents gets reconstructed according to the gold standard.
+
+        Per system, there is a single Evaluator that works as wrapper for
+        various evaluation scenarios and for various columns via the method "evaluate".
+
+        :param str f_true: file name of the gold standard (CLEF tsv-format).
+        :param str f_pred: file name of the system response (CLEF tsv-format).
+        :param list glueing_cols: concat the annotation of two columns (list with tuples).
+        :return: Evaluator object.
+
         """
 
         self.true = read_conll_annotations(f_true, glueing_cols)
@@ -51,7 +68,7 @@ class Evaluator:
 
         self.check_segment_mismatch()
 
-        # Setup dict into which metrics will be stored.
+        # metrics that will be collected for each evaluation scheme
         self.metrics = {
             "correct": 0,
             "incorrect": 0,
@@ -80,7 +97,7 @@ class Evaluator:
         #     "substitution_span": 0,
         # }
 
-        # Copy results dict to cover the four schemes.
+        # four evaluation schemes
         self.metric_schema = {
             "strict": deepcopy(self.metrics),
             "ent_type": deepcopy(self.metrics),
@@ -90,6 +107,9 @@ class Evaluator:
         }
 
     def check_segment_mismatch(self):
+        """Assert the alignment between gold standard and the system response.
+        """
+
         logging.info("Datasets imported (Gold/Predictions).")
         logging.info(f"Number of docs: {self.n_docs_true}\t{self.n_docs_pred}")
         logging.info(f"Number of lines: {self.n_lines_true}\t{self.n_lines_pred}")
@@ -104,8 +124,7 @@ class Evaluator:
             raise AssertionError("Data mismatch between true and prediction dataset")
 
     def reconstruct_segmentation(self):
-        """
-        Restructure the flat segmentation of the system annotations.
+        """Restructure the flat segmentation of the system annotations.
 
         While the content remains unchanged, the system response is properly
         restructured into documents and sentences according to the structure of the gold annotation.
@@ -137,7 +156,24 @@ class Evaluator:
 
         self.pred = docs_pred
 
-    def evaluate(self, columns: list, eval_type: str, tags: list, merge_lines=False, n_best=1):
+    def evaluate(self, columns: list, eval_type: str, tags: list = None, merge_lines=False, n_best=1):
+        """Collect extensive statistics across labels and per entity type.
+
+        For both, document-averaged and entity-type averaged
+        macro scores are computed in addition to the global metrics.
+
+        Alternative annotations via n-best or columns are only allowed for links,
+        not for entities.
+
+        :param list columns: name of column that contains the annotations.
+        :param str eval_type: define evaluation type for either links (nel) or entities (nerc).
+        :param list tags: Description of parameter `tags`.
+        :param bool merge_lines: option to drop line segmentation to allow entity spans across lines.
+        :param int n_best: number of alternative links that should be considered.
+        :return: Aggregated statistics across labels and per entity type .
+        :rtype: Tuple(list, list)
+
+        """
 
         if isinstance(columns, str):
             columns = [columns]
@@ -184,7 +220,7 @@ class Evaluator:
                     results, results_per_type, seg_results, seg_results_per_type
                 )
 
-                # accumulate stats within document
+                # accumulate stats across documents
                 doc_results, doc_results_per_type = self.accumulate_stats(
                     doc_results, doc_results_per_type, seg_results, seg_results_per_type
                 )
@@ -215,6 +251,17 @@ class Evaluator:
         return results, results_per_type
 
     def accumulate_doc_scores(self, results, doc_results):
+        """Accumulate the scores (P, R, F1) across documents.
+
+        When a entity does not occur in a particular document according to the gold standard,
+        it is dismissed as it would artifically lower the final measure.
+
+        :param dict results: nested accumulator of scores across document.
+        :param dict doc_results: nested scores of current document.
+        :return: accumulator updated with the scores of current document.
+        :rtype: dict
+
+        """
 
         for eval_schema in results:
             actual = doc_results[eval_schema]["actual"]
@@ -233,6 +280,16 @@ class Evaluator:
         return results
 
     def accumulate_stats(self, results, results_per_type, tmp_results, tmp_results_per_type):
+        """Accumulate the scores across lines.
+
+        :param dict results: nested accumulator of scores across lines.
+        :param dict results_per_type: nested accumulator of scores per type across lines.
+        :param dict tmp_results: scores of current line.
+        :param dict tmp_results_per_type: scores of current line per type.
+        :return: updated accumulator across labels and per entity type.
+        :rtype: Tuple(dict, dict)
+
+        """
 
         for eval_schema in results:
             # Aggregate metrics across entity types
@@ -247,7 +304,17 @@ class Evaluator:
 
         return results, results_per_type
 
-    def compute_metrics(self, true_named_entities, pred_named_entities, tags):
+    def compute_metrics(self, true_named_entities: list, pred_named_entities: list, tags:set):
+        """Compute the metrics of segment for all evaluation scenarios.
+
+        :param list(Entity) true_named_entities: nested list with entity annotations of gold standard.
+        :param list(Entity) pred_named_entities: nested list with entity annotations of system response.
+        :param set tags: limit to provided tags.
+        :return: nested results and results per entity type
+        :rtype: Tuple(dict, dict)
+
+        """
+
 
         # overall results
         evaluation = deepcopy(self.metric_schema)
@@ -512,10 +579,14 @@ def find_overlap(true_range, pred_range):
 
 
 def compute_actual_possible(results):
+    """Update the counts of possible and actual based on evaluation.
+
+    :param dict results: results with updated evaluation counts.
+    :return: the results dict with actual, possible updated.
+    :rtype: dict
+
     """
-    Takes a result dict that has been output by compute metrics.
-    Returns the results dict with actual, possible populated.
-    """
+
 
     correct = results["correct"]
     incorrect = results["incorrect"]
@@ -541,22 +612,22 @@ def compute_actual_possible(results):
 
 
 def compute_precision_recall(results, partial=False):
-    """
-    Takes a result dict that has been output by compute metrics.
-    Returns the results dict with precison and recall populated.
+    """ Compute the micro scores for Precision, Recall, F1.
 
-    When the results dicts is from partial or ent_type metrics, then
-    partial_or_type=True to ensure the right calculation is used for
-    calculating precision and recall.
+    :param dict results: evaluation results.
+    :param bool partial: option to half the reward of partial matches.
+    :return: Description of returned object.
+    :rtype: updated results
+
     """
+
 
     actual = results["actual"]
     possible = results["possible"]
     partial = results["partial"]
     correct = results["correct"]
 
-    # in the entity type matching scenario (fuzzy),
-    # overlapping entities and entities with strict boundary matches are rewarded equally
+
     if partial:
         precision = (correct + 0.5 * partial) / actual if actual > 0 else 0
         recall = (correct + 0.5 * partial) / possible if possible > 0 else 0
@@ -576,7 +647,7 @@ def compute_precision_recall(results, partial=False):
 
 def compute_precision_recall_wrapper(results):
     """
-    Wraps the compute_precision_recall function and runs on a dict of results
+    Wraps the compute_precision_recall function and runs it for each evaluation scenario in results
     """
 
     results_a = {
@@ -584,6 +655,9 @@ def compute_precision_recall_wrapper(results):
         for key, value in results.items()
         if key in ["partial"]
     }
+
+    # in the entity type matching scenario (fuzzy),
+    # overlapping entities and entities with strict boundary matches are rewarded equally
     results_b = {
         key: compute_precision_recall(value)
         for key, value in results.items()
@@ -601,10 +675,20 @@ def compute_precision_recall_wrapper(results):
 
 
 def compute_macro_type_scores(results, results_per_type):
+    """Compute the macro scores for Precision, Recall, F1 across entity types.
+
+
+    There are different ways to comput the macro F1-scores across class.
+    Please see the explanations at:
+    https://towardsdatascience.com/a-tale-of-two-macro-f1s-8811ddcf8f04
+
+    :param dict results: evaluation results.
+    :param dict results_per_type: evaluation results per type.
+    :return: updated results and results per type.
+    :rtype: Tuple(dict, dict)
+
     """
 
-    https://towardsdatascience.com/a-tale-of-two-macro-f1s-8811ddcf8f04
-    """
 
     for eval_schema in results:
         precision_sum = 0
@@ -636,6 +720,15 @@ def compute_macro_type_scores(results, results_per_type):
 
 
 def compute_macro_doc_scores(results):
+    """Compute the macro scores for Precision, Recall, F1 across documents.
+
+    The score is a simple average across documents.
+
+    :param dict results: evaluation results.
+    :return: updated evaluation results.
+    :rtype: dict
+
+    """
 
     metrics = ("P_macro_doc", "R_macro_doc", "F1_macro_doc")
 

@@ -99,7 +99,7 @@ def check_spurious_tags(y_true: list, y_pred:list):
             )
 
 
-def read_conll_annotations(fname, glueing_col_pairs=[], structure_only=False):
+def read_conll_annotations(fname, glueing_col_pairs=None, structure_only=False):
     """
     Read the token annotations from a tsv file (CLEF format).
 
@@ -147,12 +147,13 @@ def read_conll_annotations(fname, glueing_col_pairs=[], structure_only=False):
                     row[fieldnames[0]] = token
 
                 # perform post-hoc annotation changes
-                for col_1, col_2 in glueing_col_pairs:
-                    if row[col_2] != "O":
-                        _, col_1_label = row[col_1].split("-")
-                        col_2_iob, col_2_label = row[col_2].split("-")
-                        new_col_2_label = f"{col_2_iob}-{col_1_label}.{col_2_label}"
-                        row[col_2] = new_col_2_label
+                if glueing_col_pairs:
+                    for col_1, col_2 in glueing_col_pairs:
+                        if row[col_2] != "O":
+                            _, col_1_label = row[col_1].split("-")
+                            col_2_iob, col_2_label = row[col_2].split("-")
+                            new_col_2_label = f"{col_2_iob}-{col_1_label}.{col_2_label}"
+                            row[col_2] = new_col_2_label
 
                 # add final annotation
                 tok_annot = TokAnnotation(row)

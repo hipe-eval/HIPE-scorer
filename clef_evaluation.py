@@ -142,7 +142,7 @@ def evaluation_wrapper(evaluator, eval_type, cols, n_best=1):
     return eval_per_tag
 
 
-def get_results(f_ref, f_pred, task, skip_check=False, glueing_cols=[], n_best=1, union=False):
+def get_results(f_ref, f_pred, task, skip_check=False, glueing_cols=None, n_best=1, union=False):
 
     if not skip_check:
         submission, lang = enforce_filename(f_pred)
@@ -157,7 +157,7 @@ def get_results(f_ref, f_pred, task, skip_check=False, glueing_cols=[], n_best=1
         glueing_pairs = glueing_cols.split(",")
         glueing_col_pairs = [pair.split("+") for pair in glueing_pairs]
     else:
-        glueing_col_pairs = []
+        glueing_col_pairs = None
 
     evaluator = Evaluator(f_ref, f_pred, glueing_col_pairs)
 

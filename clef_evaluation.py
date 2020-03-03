@@ -13,11 +13,12 @@ import logging
 import csv
 import pathlib
 import json
+import sys
 
 
 FINE_COLUMNS = {"NE-FINE-LIT", "NE-FINE-METO", "NE-FINE-COMP", "NE-NESTED"}
 COARSE_COLUMNS = {"NE-COARSE-LIT", "NE-COARSE-METO"}
-NEL_COLUMNS = {"NEL-LIT", "NEL-METO"}
+NEL_COLUMNS = ["NEL-LIT", "NEL-METO"]
 
 
 def parse_args():
@@ -72,6 +73,26 @@ def parse_args():
     )
 
     parser.add_argument(
+        "-n",
+        "--n_best",
+        required=False,
+        action="store",
+        type=int,
+        default=1,
+        dest="n_best",
+        help="limits the number of annotations to n-best when ranked alternatives are provided within a single cell, separated by a pipe",
+    )
+
+    parser.add_argument(
+        "-u",
+        "--union",
+        required=False,
+        action="store_true",
+        dest="union",
+        help="consider the union of the metonymic and literal annotation for the evaluation of NEL",
+    )
+
+    parser.add_argument(
         "-s",
         "--skip_check",
         required=False,
@@ -97,21 +118,22 @@ def enforce_filename(fname):
         assert bundle in range(1, 6)
 
     except (ValueError, AssertionError) as e:
-        raise AssertionError(
-            "Filename needs to comply with shared task requirements. "
+        print(
+            "The filename needs to comply with shared task requirements. "
             "Please rename accordingly: TEAMNAME_TASKBUNDLEID_LANG_RUNNUMBER.tsv",
         )
+        sys.exit(1)
 
     return submission, lang
 
 
-def evaluation_wrapper(evaluator, eval_type, cols):
+def evaluation_wrapper(evaluator, eval_type, cols, n_best=1):
     eval_global = {}
     eval_per_tag = {}
 
     for col in cols:
         eval_global[col], eval_per_tag[col] = evaluator.evaluate(
-            col, eval_type=eval_type, tags=None, merge_lines=True
+            col, eval_type=eval_type, tags=None, merge_lines=True, n_best=n_best
         )
 
         # add aggregated stats across types as artificial tag
@@ -120,15 +142,13 @@ def evaluation_wrapper(evaluator, eval_type, cols):
     return eval_per_tag
 
 
-def get_results(
-    f_ref, f_pred, task, skip_check=False, glueing_cols=None,
-):
+def get_results(f_ref, f_pred, task, skip_check=False, glueing_cols=None, n_best=1, union=False):
 
     if not skip_check:
         submission, lang = enforce_filename(f_pred)
     else:
         submission = f_pred
-        language = "LANG"
+        lang = "LANG"
 
     f_tsv = str(pathlib.Path(f_pred).parents[0] / f"results_{task}_{lang}.tsv")
     f_json = str(pathlib.Path(f_pred).parents[0] / f"results_{task}_{lang}_all.json")
@@ -143,15 +163,51 @@ def get_results(
 
     if task == "nerc_fine":
         eval_stats = evaluation_wrapper(evaluator, eval_type="nerc", cols=FINE_COLUMNS)
-        assemble_tsv_output(submission, f_tsv, eval_stats)
+        fieldnames, rows = assemble_tsv_output(submission, eval_stats)
 
     elif task == "nerc_coarse":
         eval_stats = evaluation_wrapper(evaluator, eval_type="nerc", cols=COARSE_COLUMNS)
-        assemble_tsv_output(submission, f_tsv, eval_stats)
+        fieldnames, rows = assemble_tsv_output(submission, eval_stats)
 
-    elif task == "nel":
-        eval_stats = evaluation_wrapper(evaluator, eval_type="nel", cols=NEL_COLUMNS)
-        assemble_tsv_output(submission, f_tsv, eval_stats, regimes=["fuzzy"], only_aggregated=True)
+    elif task == "nel" and not union:
+        eval_stats = evaluation_wrapper(evaluator, eval_type="nel", cols=NEL_COLUMNS, n_best=1)
+        fieldnames, rows = assemble_tsv_output(
+            submission, eval_stats, regimes=["fuzzy"], only_aggregated=True, suffix=f"best@1",
+        )
+        if n_best > 1:
+            # compute also n-best result
+            eval_stats = evaluation_wrapper(
+                evaluator, eval_type="nel", cols=NEL_COLUMNS, n_best=n_best
+            )
+            _, rows_n_best = assemble_tsv_output(
+                submission,
+                eval_stats,
+                regimes=["fuzzy"],
+                only_aggregated=True,
+                suffix=f"best@{n_best}",
+            )
+            rows += rows_n_best
+
+    elif task == "nel" and union:
+        eval_global, eval_per_tag = evaluator.evaluate(
+            NEL_COLUMNS, eval_type="nel", tags=None, merge_lines=True, n_best=1
+        )
+        # add aggregated stats across types as artificial tag
+        eval_per_tag["ALL"] = eval_global
+        eval_stats = {"|".join(NEL_COLUMNS): eval_global}
+
+        fieldnames, rows = assemble_tsv_output(
+            submission,
+            eval_stats,
+            regimes=["fuzzy"],
+            only_aggregated=True,
+            suffix=f"union@lit-meto",
+        )
+
+    with open(f_tsv, "w") as csvfile:
+        writer = csv.DictWriter(csvfile, delimiter="\t", fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
 
     with open(f_json, "w") as jsonfile:
         json.dump(
@@ -160,7 +216,7 @@ def get_results(
 
 
 def assemble_tsv_output(
-    submission, f_tsv, eval_stats, regimes=["fuzzy", "strict"], only_aggregated=False
+    submission, eval_stats, regimes=["fuzzy", "strict"], only_aggregated=False, suffix=""
 ):
 
     metrics = ("P", "R", "F1")
@@ -184,11 +240,14 @@ def assemble_tsv_output(
 
     rows = []
 
+    if suffix:
+        suffix = "-" + suffix
+
     for col in sorted(eval_stats):
         for aggr in aggregations:
             for regime in regimes:
 
-                eval_regime = f"{col}-{aggr}-{regime}"
+                eval_regime = f"{col}-{aggr}-{regime}{suffix}"
                 # mapping terminology fuzzy->type
                 regime = "ent_type" if regime == "fuzzy" else regime
 
@@ -226,10 +285,19 @@ def assemble_tsv_output(
 
                     rows.append(results)
 
-    with open(f_tsv, "w") as csvfile:
-        writer = csv.DictWriter(csvfile, delimiter="\t", fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(rows)
+    return fieldnames, rows
+
+
+def check_validity_of_arguments(args):
+    if args.task != "nel" and (args.union or args.n_best > 1):
+        msg = "Alternative annotations are only allowed for the NEL evaluation."
+        logging.error(msg)
+        raise AssertionError(msg)
+
+    if args.union and args.n_best > 1:
+        msg = "Please restrict to a single alternative schema, either a ranked n-best list or the union of the metonymic and literal column."
+        logging.error(msg)
+        raise AssertionError(msg)
 
 
 def main():
@@ -243,7 +311,21 @@ def main():
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
 
-    get_results(args.f_ref, args.f_pred, args.task, args.skip_check, args.glueing_cols)
+    try:
+        check_validity_of_arguments(args)
+    except Exception as e:
+        print(e)
+        sys.exit(1)
+
+    get_results(
+        args.f_ref,
+        args.f_pred,
+        args.task,
+        args.skip_check,
+        args.glueing_cols,
+        args.n_best,
+        args.union,
+    )
 
 
 ################################################################################

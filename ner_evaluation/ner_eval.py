@@ -5,6 +5,7 @@ import sys
 
 
 import logging
+from collections import defaultdict
 from copy import deepcopy
 import numpy as np
 
@@ -136,39 +137,25 @@ class Evaluator:
 
         self.pred = docs_pred
 
-    def evaluate(self, column, eval_type, tags, merge_lines=False):
+    def evaluate(self, columns: list, eval_type: str, tags: list, merge_lines=False, n_best=1):
 
-        try:
-            y_true = [column_selector(doc, column) for doc in self.true]
-            y_pred = [column_selector(doc, column) for doc in self.pred]
-        except AttributeError:
-            raise AttributeError(
-                "Provided annotation column is not available for both predicted and true file"
-            )
+        if isinstance(columns, str):
+            columns = [columns]
 
-        if tags:
-            logging.info(f"Provided tags for the column {column}: {tags}")
-            tags = check_tag_selection(y_true, tags)
-        elif eval_type == "nerc":
-            # For NERC, only tags which are covered by the gold standard are considered
-            tags = get_all_tags(y_true)
-            check_spurious_tags(y_true, y_pred)
-        elif eval_type == "nel":
-            # For NEL, any tag in gold standard or predictions are considered
-            tags = get_all_tags(y_true) | get_all_tags(y_pred)
+        tags = self.set_evaluation_tags(columns, tags, eval_type)
 
-        logging.info(f"Evaluating on {column} for the following tags: {tags}")
+        logging.info(f"Evaluating on {columns} for the following tags: {tags}")
 
         # Create an accumulator to store overall results
         results = deepcopy(self.metric_schema)
-        results_per_type = {e: deepcopy(self.metric_schema) for e in tags}
+        results_per_type = defaultdict(lambda: deepcopy(self.metric_schema))
 
         # Iterate document-wise
-        for y_true_doc, y_pred_doc in zip(y_true, y_pred):
+        for y_true_doc, y_pred_doc in zip(self.true, self.pred):
 
             # Create an accumulator to store document-level results
             doc_results = deepcopy(self.metric_schema)
-            doc_results_per_type = {e: deepcopy(self.metric_schema) for e in tags}
+            doc_results_per_type = defaultdict(lambda: deepcopy(self.metric_schema))
 
             # merge lines within a doc as entities can stretch across two lines
             if merge_lines:
@@ -181,13 +168,15 @@ class Evaluator:
                 # Compute result for one segment
                 if eval_type == "nerc":
                     seg_results, seg_results_per_type = self.compute_metrics(
-                        collect_named_entities(y_true_seg),
-                        collect_named_entities(y_pred_seg),
+                        collect_named_entities(y_true_seg, columns),
+                        collect_named_entities(y_pred_seg, columns),
                         tags,
                     )
                 elif eval_type == "nel":
                     seg_results, seg_results_per_type = self.compute_metrics(
-                        collect_link_objects(y_true_seg), collect_link_objects(y_pred_seg), tags,
+                        collect_link_objects(y_true_seg, columns),
+                        collect_link_objects(y_pred_seg, columns, n_best),
+                        tags,
                     )
 
                 # accumulate overall stats
@@ -201,7 +190,7 @@ class Evaluator:
                 )
 
             # Compute document-level metrics by entity type
-            for e_type in tags:
+            for e_type in results_per_type:
                 doc_results_per_type[e_type] = compute_precision_recall_wrapper(
                     doc_results_per_type[e_type]
                 )
@@ -214,7 +203,7 @@ class Evaluator:
             results = self.accumulate_doc_scores(results, doc_results)
 
         # Compute overall metrics by entity type
-        for e_type in tags:
+        for e_type in results_per_type:
             results_per_type[e_type] = compute_precision_recall_wrapper(results_per_type[e_type])
             results_per_type[e_type] = compute_macro_doc_scores(results_per_type[e_type])
 
@@ -251,7 +240,7 @@ class Evaluator:
                 results[eval_schema][metric] += tmp_results[eval_schema][metric]
 
                 # Aggregate metrics by entity type
-                for e_type in results_per_type:
+                for e_type in tmp_results_per_type:
                     results_per_type[e_type][eval_schema][metric] += tmp_results_per_type[e_type][
                         eval_schema
                     ][metric]
@@ -264,7 +253,7 @@ class Evaluator:
         evaluation = deepcopy(self.metric_schema)
 
         # results by entity type
-        evaluation_agg_entities_type = {e: deepcopy(self.metric_schema) for e in tags}
+        evaluation_agg_entities_type = defaultdict(lambda: deepcopy(self.metric_schema))
 
         # keep track of entities that overlapped
         true_which_overlapped_with_pred = []
@@ -277,8 +266,10 @@ class Evaluator:
         # 2) Where there is a tag in the true data that the model is not capable of
         # predicting.
 
-        true_named_entities = [ent for ent in true_named_entities if ent.e_type in tags]
-        pred_named_entities = [ent for ent in pred_named_entities if ent.e_type in tags]
+        # only allow alternatives in prediction file, not in gold standard
+        true_named_entities = [ent[0] for ent in true_named_entities if ent[0].e_type in tags]
+        # pred_named_entities = [ent for ent in pred_named_entities if [ent[0]].e_type in tags]
+        pred_named_entities = [ent for ent in pred_named_entities if any([e.e_type in tags for e in ent])]
 
         # go through each predicted named-entity
         for pred in pred_named_entities:
@@ -289,19 +280,21 @@ class Evaluator:
             # for scenario explanation.
 
             # Scenario I: Exact match between true and pred
+            for true in true_named_entities:
+                if any(p == true for p in pred):
+                    true_which_overlapped_with_pred.append(true)
+                    evaluation["strict"]["correct"] += 1
+                    evaluation["ent_type"]["correct"] += 1
+                    evaluation["exact"]["correct"] += 1
+                    evaluation["partial"]["correct"] += 1
 
-            if pred in true_named_entities:
-                true_which_overlapped_with_pred.append(pred)
-                evaluation["strict"]["correct"] += 1
-                evaluation["ent_type"]["correct"] += 1
-                evaluation["exact"]["correct"] += 1
-                evaluation["partial"]["correct"] += 1
+                    # aggregated by entity type results
+                    evaluation_agg_entities_type[true.e_type]["strict"]["correct"] += 1
+                    evaluation_agg_entities_type[true.e_type]["ent_type"]["correct"] += 1
+                    evaluation_agg_entities_type[true.e_type]["exact"]["correct"] += 1
+                    evaluation_agg_entities_type[true.e_type]["partial"]["correct"] += 1
 
-                # for the agg. by e_type results
-                evaluation_agg_entities_type[pred.e_type]["strict"]["correct"] += 1
-                evaluation_agg_entities_type[pred.e_type]["ent_type"]["correct"] += 1
-                evaluation_agg_entities_type[pred.e_type]["exact"]["correct"] += 1
-                evaluation_agg_entities_type[pred.e_type]["partial"]["correct"] += 1
+                    break
 
             else:
 
@@ -310,15 +303,15 @@ class Evaluator:
 
                     # NOTE: error in original code: missing + 1
                     # overlapping needs to take into account last token as well
-                    pred_range = range(pred.start_offset, pred.end_offset + 1)
+                    pred_range = range(pred[0].start_offset, pred[0].end_offset + 1)
                     true_range = range(true.start_offset, true.end_offset + 1)
 
                     # Scenario IV: Offsets match, but entity type is wrong
 
                     if (
-                        true.start_offset == pred.start_offset
-                        and pred.end_offset == true.end_offset
-                        and true.e_type != pred.e_type
+                        true.start_offset == pred[0].start_offset
+                        and pred[0].end_offset == true.end_offset
+                        and true.e_type != pred[0].e_type
                     ):
 
                         # overall results
@@ -340,9 +333,9 @@ class Evaluator:
 
                         break
 
-                    # check for an overlap i.e. not exact boundary match, with true entities
+                    # check for an overlap, i.e. not exact boundary match, with true entities
                     # NOTE: error in original code:
-                    # overlaps with true entititie must only counted once
+                    # overlaps with true entities must only counted once
                     elif (
                         find_overlap(true_range, pred_range)
                         and true not in true_which_overlapped_with_pred
@@ -355,7 +348,7 @@ class Evaluator:
                         # exactly), and the entity type is the same.
                         # 2.1 overlaps with the same entity type
 
-                        if pred.e_type == true.e_type:
+                        if any(p.e_type == true.e_type for p in pred):
 
                             # overall results
                             evaluation["strict"]["incorrect"] += 1
@@ -412,9 +405,8 @@ class Evaluator:
                     # NOTE: error in original code:
                     # a spurious entity for a particular tag should be only
                     # attributed to the respective tag
-
-                    if pred.e_type in tags:
-                        spurious_tags = [pred.e_type]
+                    if pred[0].e_type in tags:
+                        spurious_tags = [pred[0].e_type]
 
                     else:
                         # NOTE: when pred.e_type is not found in tags
@@ -435,9 +427,7 @@ class Evaluator:
         # Scenario III: Entity was missed entirely.
 
         for true in true_named_entities:
-            if true in true_which_overlapped_with_pred:
-                continue
-            else:
+            if true not in true_which_overlapped_with_pred:
                 # overall results
                 evaluation["strict"]["missed"] += 1
                 evaluation["ent_type"]["missed"] += 1
@@ -446,7 +436,7 @@ class Evaluator:
 
                 # evaluation["slot_error_rate"]["deletion"] += 1
 
-                # for the agg. by e_type
+                # aggregated by entity type results
                 evaluation_agg_entities_type[true.e_type]["strict"]["missed"] += 1
                 evaluation_agg_entities_type[true.e_type]["ent_type"]["missed"] += 1
                 evaluation_agg_entities_type[true.e_type]["partial"]["missed"] += 1
@@ -471,6 +461,32 @@ class Evaluator:
                 )
 
         return evaluation, evaluation_agg_entities_type
+
+    def set_evaluation_tags(self, columns, tags, eval_type):
+
+        try:
+            y_true = [column_selector(doc, columns[0]) for doc in self.true]
+            y_pred = []
+            for col in columns:
+                y_pred += [column_selector(doc, col) for doc in self.pred]
+
+        except AttributeError:
+            raise AttributeError(
+                f"Provided annotation columns {columns} is not available for both predicted and true file"
+            )
+
+        if tags:
+            logging.info(f"Provided tags for the column {columns}: {tags}")
+            tags = check_tag_selection(y_true, tags)
+        elif eval_type == "nerc":
+            # For NERC, only tags which are covered by the gold standard are considered
+            tags = get_all_tags(y_true)
+            check_spurious_tags(y_true, y_pred)
+        elif eval_type == "nel":
+            # For NEL, any tag in gold standard or predictions are considered
+            tags = get_all_tags(y_true) | get_all_tags(y_pred)
+
+        return tags
 
 
 def find_overlap(true_range, pred_range):
@@ -585,7 +601,6 @@ def compute_precision_recall_wrapper(results):
 
 
 def compute_macro_type_scores(results, results_per_type):
-
     """
 
     https://towardsdatascience.com/a-tale-of-two-macro-f1s-8811ddcf8f04
@@ -634,41 +649,9 @@ def compute_macro_doc_scores(results):
 
 
 def compute_slot_error_rate(results, results_per_type):
-
     """
     https://pdfs.semanticscholar.org/451b/61b390b86ae5629a21461d4c619ea34046e0.pdf
     https://www.aclweb.org/anthology/I11-1058.pdf
     """
 
     raise NotImplementedError
-
-    # 'Q21': {'ent_type': {'correct': 5,
-    #    'incorrect': 0,
-    #    'partial': 0,
-    #    'missed': 0,
-    #    'spurious': 0,
-    #    'possible': 5,
-    #    'actual': 5,
-    #    'precision': 1.0,
-    #    'recall': 1.0,
-    #    'f1': 1.0},
-    #
-    #
-    #
-    #    D+I+SST+ 0.5×(SS+ST)Ref
-    #
-    #
-    #
-    #
-    # for eval_schema in results:
-    #     for coref_chain in results_per_type:
-    #
-    #         deletions += results['ent_type']['missing']
-    #         insertions += results['ent_type']['spurious']
-    #
-    #         substitutions_both += results['wrong_type_with_overlap']
-    #         substitutions_type += results['ent_type']['correct']
-    #
-    #         substitutions_span += results['partial']['correct']
-    #
-    # return results

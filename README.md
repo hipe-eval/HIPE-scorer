@@ -30,7 +30,7 @@ The Slot Error Rate (SER) is dropped for the shared task evaluation.
 
 The evaluation for NEL works similarly as for NERC. The link of an entity is interpreted as a label. As there is no IOB-tagging, a consecutive row of identical links is considered as a single entity. In terms of boundaries, NEL is only evaluated according to the fuzzy scenario. Thus, to get counted as correct, the system response needs only one overlapping link label with the gold standard. 
 
-With respect to the **linking of metonymic mentions**, two evaluation scenarios will be considered: strict, where only the metonymic link will be taken into account, and relaxed, where the union of literal and metonymic annotations will be taken into account. This is not implemented yet in the scorer, it will be done with the next release.
+With respect to the **linking of metonymic mentions**, two evaluation scenarios will be considered: strict, where only the metonymic link will be taken into account, and relaxed, where the union of literal and metonymic annotations will be taken into account.
 
 
 ## Scorer
@@ -46,9 +46,9 @@ Unless you define otherwise with the `--skip_check` argument, the evaluation scr
 
 ### Output
 
-The evaluation script outputs two files in the same directory where the prediction file is located: `results_TASK.tsv` and `results_TASK_all.json`
+The evaluation script outputs two files in the same directory where the prediction file is located: `results_TASK_LANG.tsv` and `results_TASK_LANG_all.json`
 
-The condensed tsv-report (`results_TASK.tsv`) contains all the measures that are relevant for the official shared task evaluation. The report has the following structure:
+The condensed tsv-report (`results_TASK_LANG.tsv`) contains all the measures that are relevant for the official shared task evaluation. The report has the following structure:
 
 | System                               | Evaluation               | Label | P    | R    | F1   | F1_std | P_std | R_std | TP   | FP   | FN   |
 | ------------------------------------ | ------------------------ | ----- | ---- | ---- | ---- | ------ | ----- | ----- | ---- | ---- | ---- |
@@ -56,7 +56,7 @@ The condensed tsv-report (`results_TASK.tsv`) contains all the measures that are
 
 Cells may be empty in case they are not defined or provide only redundant information. The column `Evaluation` refers to the evaluated column and defines the measures P, R, F1, etc. It has the following structure: `COL_NAME-{micro/macro_doc}-{fuzzy-strict}`. This schema makes it easy to filter for a particular metric with `grep`.
 
-The detailed json-report (`results_TASK_all.json`) contains all the measures that are available (see below).
+The detailed json-report (`results_TASK_LANG_all.json`) contains all the measures that are available (see below).
 
 Moreover, the figures are computed in aggregate (Label = ALL) and per entity-type.
 

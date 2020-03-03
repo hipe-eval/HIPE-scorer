@@ -33,7 +33,7 @@ class TestEvaluationResults(unittest.TestCase):
         )
         eval_per_tag["ALL"] = eval_global
 
-        # with open("ref_results_nerc_fine_all.json", "w") as jsonfile:
+        # with open("results_nerc_fine_all.json", "w") as jsonfile:
         #     json.dump(
         #         eval_per_tag, jsonfile, indent=4,
         #     )
@@ -44,14 +44,29 @@ class TestEvaluationResults(unittest.TestCase):
         ref_path = "ner_evaluation/tests/results/ref_results_nel_all.json"
 
         eval_global, eval_per_tag = self.evaluator.evaluate(
-            "NEL-LIT", eval_type="nel", tags=None, merge_lines=True
+            "NEL-LIT", eval_type="nel", tags=None, merge_lines=True, n_best=3
         )
         eval_per_tag["ALL"] = eval_global
 
-        # with open("ref_results_nel_all.json", "w") as jsonfile:
+        # with open("results_nel_all.json", "w") as jsonfile:
         #     json.dump(
         #         eval_per_tag, jsonfile, indent=4,
         #     )
+
+        self._compare_eval_results(ref_path, eval_per_tag)
+
+    def test_eval_results_nel_union(self):
+        ref_path = "ner_evaluation/tests/results/ref_results_nel_all.json"
+
+        eval_global, eval_per_tag = self.evaluator.evaluate(
+            ["NEL-LIT", "NEL-METO"], eval_type="nel", tags=None, merge_lines=True, n_best=1
+        )
+        eval_per_tag["ALL"] = eval_global
+
+        with open("results_nel_all.json", "w") as jsonfile:
+            json.dump(
+                eval_per_tag, jsonfile, indent=4,
+            )
 
         self._compare_eval_results(ref_path, eval_per_tag)
 

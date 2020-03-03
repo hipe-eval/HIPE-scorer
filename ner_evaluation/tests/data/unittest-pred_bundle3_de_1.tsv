@@ -11,7 +11,7 @@ der	O	O	O	O	O	O	_	_	_
 serbischen	O	O	O	O	O	O	_	_	_			
 Regierung	O	O	O	O	O	O	_	_	_			
 nimmt	O	O	O	O	O	O	_	_	_			
-Pa	B-pers	O	B-pers.ind	O	O	O	Q313843	_	NoSpaceAfter			
+Pa	B-pers	O	B-pers.ind	O	O	O	Q313843	Q1435	NoSpaceAfter			wrong NEL_metonymic does not change anything
 ¬	I-pers	O	I-pers.ind	O	O	O	Q313843	_	EndOfLine|NoSpaceAfter			
 # segment_iiif_link = _												
 sitsch	I-pers	O	I-pers.ind	O	O	O	Q313843	_	_			
@@ -75,7 +75,7 @@ und	O	O	O	O	O	O	_	_	_
 den	O	O	B-loc.adm.nat	O	O	O	_	_	_	O		fuzzy: 1 FP, strict: 1 FP
 neuen	O	O	O	O	O	O	_	_	_			
 in	O	O	O	O	O	O	_	_	_			
-Zagreb	B-loc	O	B-loc.adm.town	O	O	O	Q1435	_	_			
+Zagreb	B-loc	O	B-loc.adm.town	O	O	O	Qwrong|Q1435	Q1435	_		Q1435	no change when evaluating with n_best > 1 or union of literal and metonmyic column
 konstituierten	O	O	O	O	O	O	_	_	EndOfLine|NoSpaceAfter			
 # segment_iiif_link = _												
 Staat	O	O	O	O	O	O	_	_	_			

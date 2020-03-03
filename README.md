@@ -40,7 +40,7 @@ To evaluate the predictions of your system on the dev set, you can run the follo
 
 There are three different evaluation modes available: `nerc_coarse`, `nerc_fine`, `nel`. Depending on the task, the script performs the evaluation for the corresponding columns and evaluation scenarios automatically. 
 
-**Format requirements** The script expects both files (system responses and gold standard) to have a similar structure (same number of columns) as well as similar content (same number of token lines, in the exact same order). In cases of mismatches, the evaluation fails and outputs information about the issue. Please note that in its current version, the script expects to find the following comment lines (to segment the predictions): `# document_id` and `# segment_iiif_link`. Other comment lines starting with a `#` may be omitted. The requirement of having those 2 comment lines will be dropped soon.
+**Format requirements** The script expects both files (system responses and gold standard) to have a similar structure (same number of columns) as well as similar content (same number of token lines, in the exact same order). Any comment lines may be omitted. The script will try to reconstruct the segmentation according to the gold standard automatically. In cases of unresolvable mismatches, the evaluation fails and outputs information about the issue. 
 
 Unless you define otherwise with the `--skip_check` argument, the evaluation script enforces the following convention on the file name (see [HIPE Shared Task Participation Guidelines](https://zenodo.org/record/3604238), p. 13): `TEAMNAME_TASKBUNDLEID_LANG_RUNNUMBER.tsv`
 

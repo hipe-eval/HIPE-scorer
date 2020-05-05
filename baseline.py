@@ -50,9 +50,10 @@ def parse_args():
     parser.add_argument(
         "-e",
         "--eval",
-        required=True,
+        required=False,
         action="store",
         dest="eval",
+        default=None,
         help="type of evaluation",
         choices={"nerc_fine", "nerc_coarse"},
     )
@@ -153,11 +154,11 @@ def write_predictions(fname, pred, dev):
                 tok_pos_start += len(sent)
 
 
-def pipeline(f_train, f_pred, f_dev, cols, eval_task):
+def pipeline(f_train, f_pred, f_dev, cols, eval):
 
     # get data
     train = read_conll_annotations(f_train)
-    dev = read_conll_annotations(f_dev)
+    dev = read_conll_annotations(f_dev, structure_only=True)
     pred = read_conll_annotations(f_dev, structure_only=True)
 
     # flatten documents to represent an entire document as a single sentence
@@ -182,7 +183,8 @@ def pipeline(f_train, f_pred, f_dev, cols, eval_task):
 
     write_predictions(f_pred, pred, dev)
 
-    get_results(f_dev, f_pred, eval_task)
+    if eval:
+        get_results(f_dev, f_pred, eval)
 
 
 if __name__ == "__main__":

@@ -40,7 +40,7 @@ def get_all_tags(y_true):
     """
 
     # keep only primary annotation when separated by a pipe
-    tags = {label.split('|')[0].split("-")[-1] for doc in y_true for seg in doc for label in seg}
+    tags = {label.split("|")[0].split("-")[-1] for doc in y_true for seg in doc for label in seg}
     if "_" in tags:
         tags.remove("_")
     if "O" in tags:
@@ -75,9 +75,7 @@ def check_tag_selection(y_cand: list, tags_ref: list):
     return clean_tags
 
 
-
-
-def check_spurious_tags(y_true: list, y_pred:list):
+def check_spurious_tags(y_true: list, y_pred: list):
     """Log any tags of the system response which are not in the gold standard.
 
     :param list y_true: a nested list of gold labels with the structure "[docs [sents [tokens]]]".
@@ -86,7 +84,6 @@ def check_spurious_tags(y_true: list, y_pred:list):
     :rtype: None
 
     """
-
 
     tags_true = get_all_tags(y_true)
     tags_pred = get_all_tags(y_pred)
@@ -115,7 +112,7 @@ def read_conll_annotations(fname, glueing_col_pairs=None, structure_only=False):
     doc_annotations = []
 
     with open(fname) as csvfile:
-        csvreader = csv.DictReader(csvfile, delimiter="\t")
+        csvreader = csv.DictReader(csvfile, delimiter="\t", quoting=csv.QUOTE_NONE, quotechar="")
         fieldnames = csvreader.fieldnames
 
         for row in csvreader:
@@ -243,8 +240,10 @@ def collect_link_objects(tokens, cols, n_best=1):
     ent_type = None
 
     if len(cols) > 1 and n_best > 1:
-        msg = 'NEL evaluation is undefined when both a alternative column is provided as well as a n-best list within the cell.' + \
-            'Please restrict to a single schema comprising the alternatives.'
+        msg = (
+            "NEL evaluation is undefined when both a alternative column is provided as well as a n-best list within the cell."
+            + "Please restrict to a single schema comprising the alternatives."
+        )
         logging.error(msg)
         raise AssertionError(msg)
 
@@ -286,7 +285,7 @@ def collect_link_objects(tokens, cols, n_best=1):
         # alternative annotations provided in same cell, separated by a pipe
         for link in links:
             union = []
-            n_best_links = link.e_type.split('|')[:n_best]
+            n_best_links = link.e_type.split("|")[:n_best]
 
             for tag in n_best_links:
                 union.append(Entity(tag, link.start_offset, link.end_offset))

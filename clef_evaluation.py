@@ -101,6 +101,15 @@ def parse_args():
         help="skip check that ensures the prediction file is in line with submission requirements",
     )
 
+    parser.add_argument(
+        "-o",
+        "--outdir",
+        action="store",
+        default=".",
+        dest="outdir",
+        help="name of output directory",
+    )
+
     return parser.parse_args()
 
 
@@ -142,7 +151,9 @@ def evaluation_wrapper(evaluator, eval_type, cols, n_best=1):
     return eval_per_tag
 
 
-def get_results(f_ref, f_pred, task, skip_check=False, glueing_cols=None, n_best=1, union=False):
+def get_results(
+    f_ref, f_pred, task, skip_check=False, glueing_cols=None, n_best=1, union=False, outdir="."
+):
 
     if not skip_check:
         submission, lang = enforce_filename(f_pred)
@@ -150,8 +161,9 @@ def get_results(f_ref, f_pred, task, skip_check=False, glueing_cols=None, n_best
         submission = f_pred
         lang = "LANG"
 
-    f_tsv = str(pathlib.Path(f_pred).parents[0] / f"results_{task}_{lang}.tsv")
-    f_json = str(pathlib.Path(f_pred).parents[0] / f"results_{task}_{lang}_all.json")
+    f_sub = pathlib.Path(f_pred)
+    f_tsv = str(pathlib.Path(outdir) / f_sub.name.replace(".tsv", f"_{task}_results.tsv"))
+    f_json = str(pathlib.Path(outdir) / f_sub.name.replace(".tsv", f"_{task}_results.json"))
 
     if glueing_cols:
         glueing_pairs = glueing_cols.split(",")
@@ -325,6 +337,7 @@ def main():
         args.glueing_cols,
         args.n_best,
         args.union,
+        args.outdir,
     )
 
 

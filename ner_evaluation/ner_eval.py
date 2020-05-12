@@ -22,11 +22,7 @@ from ner_evaluation.utils import (
 )
 
 
-logging.basicConfig(
-    format="%(asctime)s %(name)s %(levelname)s: %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-    level="DEBUG",
-)
+logger = logging.getLogger(__name__)
 
 
 class Evaluator:
@@ -48,6 +44,8 @@ class Evaluator:
         :return: Evaluator object.
 
         """
+        self.f_true = f_true
+        self.f_pred = f_pred
 
         self.true = read_conll_annotations(f_true, glueing_cols)
         self.pred = read_conll_annotations(f_pred, glueing_cols)
@@ -204,9 +202,7 @@ class Evaluator:
                 # Compute result for one segment
                 if eval_type == "nerc":
                     seg_results, seg_results_per_type = self.compute_metrics(
-                        collect_named_entities(y_true_seg, columns),
-                        collect_named_entities(y_pred_seg, columns),
-                        tags,
+                        collect_named_entities(y_true_seg, columns), collect_named_entities(y_pred_seg, columns), tags,
                     )
                 elif eval_type == "nel":
                     seg_results, seg_results_per_type = self.compute_metrics(
@@ -227,9 +223,7 @@ class Evaluator:
 
             # Compute document-level metrics by entity type
             for e_type in results_per_type:
-                doc_results_per_type[e_type] = compute_precision_recall_wrapper(
-                    doc_results_per_type[e_type]
-                )
+                doc_results_per_type[e_type] = compute_precision_recall_wrapper(doc_results_per_type[e_type])
                 results_per_type[e_type] = self.accumulate_doc_scores(
                     results_per_type[e_type], doc_results_per_type[e_type]
                 )
@@ -298,13 +292,11 @@ class Evaluator:
 
                 # Aggregate metrics by entity type
                 for e_type in tmp_results_per_type:
-                    results_per_type[e_type][eval_schema][metric] += tmp_results_per_type[e_type][
-                        eval_schema
-                    ][metric]
+                    results_per_type[e_type][eval_schema][metric] += tmp_results_per_type[e_type][eval_schema][metric]
 
         return results, results_per_type
 
-    def compute_metrics(self, true_named_entities: list, pred_named_entities: list, tags:set):
+    def compute_metrics(self, true_named_entities: list, pred_named_entities: list, tags: set):
         """Compute the metrics of segment for all evaluation scenarios.
 
         :param list(Entity) true_named_entities: nested list with entity annotations of gold standard.
@@ -314,7 +306,6 @@ class Evaluator:
         :rtype: Tuple(dict, dict)
 
         """
-
 
         # overall results
         evaluation = deepcopy(self.metric_schema)
@@ -403,10 +394,7 @@ class Evaluator:
                     # check for an overlap, i.e. not exact boundary match, with true entities
                     # NOTE: error in original code:
                     # overlaps with true entities must only counted once
-                    elif (
-                        find_overlap(true_range, pred_range)
-                        and true not in true_which_overlapped_with_pred
-                    ):
+                    elif find_overlap(true_range, pred_range) and true not in true_which_overlapped_with_pred:
 
                         true_which_overlapped_with_pred.append(true)
                         found_overlap = True
@@ -523,9 +511,7 @@ class Evaluator:
             # level results.
             for eval_type in entity_level:
                 # if eval_type != "slot_error_rate":
-                evaluation_agg_entities_type[entity_type][eval_type] = compute_actual_possible(
-                    entity_level[eval_type]
-                )
+                evaluation_agg_entities_type[entity_type][eval_type] = compute_actual_possible(entity_level[eval_type])
 
         return evaluation, evaluation_agg_entities_type
 
@@ -538,20 +524,29 @@ class Evaluator:
                 y_pred += [column_selector(doc, col) for doc in self.pred]
 
         except AttributeError:
-            raise AttributeError(
-                f"Provided annotation columns {columns} is not available for both predicted and true file"
-            )
+            msg = f"Provided annotation columns {columns} is not available for both predicted and true file"
+            logging.error(msg)
+            check_validity_of_arguments
+
+        true_tags = get_all_tags(y_true)
+        pred_tags = get_all_tags(y_pred)
 
         if tags:
             logging.info(f"Provided tags for the column {columns}: {tags}")
             tags = check_tag_selection(y_true, tags)
         elif eval_type == "nerc":
             # For NERC, only tags which are covered by the gold standard are considered
-            tags = get_all_tags(y_true)
+            tags = true_tags
             check_spurious_tags(y_true, y_pred)
+
+            if not pred_tags:
+                msg = f"There are no tags in the system response file for the column: {columns}"
+                logging.error(msg)
+                raise AssertionError(msg)
+
         elif eval_type == "nel":
             # For NEL, any tag in gold standard or predictions are considered
-            tags = get_all_tags(y_true) | get_all_tags(y_pred)
+            tags = true_tags | pred_tags
 
         return tags
 
@@ -587,7 +582,6 @@ def compute_actual_possible(results):
 
     """
 
-
     correct = results["correct"]
     incorrect = results["incorrect"]
     partial = results["partial"]
@@ -621,12 +615,10 @@ def compute_precision_recall(results, partial=False):
 
     """
 
-
     actual = results["actual"]
     possible = results["possible"]
     partial = results["partial"]
     correct = results["correct"]
-
 
     if partial:
         precision = (correct + 0.5 * partial) / actual if actual > 0 else 0
@@ -638,9 +630,7 @@ def compute_precision_recall(results, partial=False):
 
     results["P_micro"] = precision
     results["R_micro"] = recall
-    results["F1_micro"] = (
-        2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
-    )
+    results["F1_micro"] = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
 
     return results
 
@@ -650,18 +640,12 @@ def compute_precision_recall_wrapper(results):
     Wraps the compute_precision_recall function and runs it for each evaluation scenario in results
     """
 
-    results_a = {
-        key: compute_precision_recall(value, True)
-        for key, value in results.items()
-        if key in ["partial"]
-    }
+    results_a = {key: compute_precision_recall(value, True) for key, value in results.items() if key in ["partial"]}
 
     # in the entity type matching scenario (fuzzy),
     # overlapping entities and entities with strict boundary matches are rewarded equally
     results_b = {
-        key: compute_precision_recall(value)
-        for key, value in results.items()
-        if key in ["strict", "exact", "ent_type"]
+        key: compute_precision_recall(value) for key, value in results.items() if key in ["strict", "exact", "ent_type"]
     }
 
     # TODO: compute SER
@@ -688,7 +672,6 @@ def compute_macro_type_scores(results, results_per_type):
     :rtype: Tuple(dict, dict)
 
     """
-
 
     for eval_schema in results:
         precision_sum = 0

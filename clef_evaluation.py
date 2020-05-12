@@ -127,11 +127,11 @@ def enforce_filename(fname):
         assert bundle in range(1, 6)
 
     except (ValueError, AssertionError) as e:
-        print(
+        msg = (
             "The filename needs to comply with shared task requirements. "
-            "Please rename accordingly: TEAMNAME_TASKBUNDLEID_LANG_RUNNUMBER.tsv",
+            + "Please rename accordingly: TEAMNAME_TASKBUNDLEID_LANG_RUNNUMBER.tsv"
         )
-        sys.exit(1)
+        raise AssertionError(msg)
 
     return submission, lang
 
@@ -313,13 +313,12 @@ def check_validity_of_arguments(args):
 
 
 def main():
-
     args = parse_args()
 
     logging.basicConfig(
         filename=args.f_log,
         filemode="w",
-        level=logging.INFO,
+        level=logging.DEBUG,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
 
@@ -329,16 +328,19 @@ def main():
         print(e)
         sys.exit(1)
 
-    get_results(
-        args.f_ref,
-        args.f_pred,
-        args.task,
-        args.skip_check,
-        args.glueing_cols,
-        args.n_best,
-        args.union,
-        args.outdir,
-    )
+    try:
+        get_results(
+            args.f_ref,
+            args.f_pred,
+            args.task,
+            args.skip_check,
+            args.glueing_cols,
+            args.n_best,
+            args.union,
+            args.outdir,
+        )
+    except AssertionError as err:
+        print(err)
 
 
 ################################################################################

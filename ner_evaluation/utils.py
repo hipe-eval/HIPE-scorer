@@ -20,7 +20,13 @@ class TokAnnotation:
         # columns are set as class variables
         for k, v in properties.items():
             if k.upper() != "TOKEN":
-                v = v.upper()
+                try:
+                    v = v.upper()
+                except AttributeError:
+                    msg = f"There are empty values in column '{k}'. They get replaced by an underscore."
+                    logging.warning(msg)
+                    v = "_"
+
             setattr(self, k, v)
 
     def __repr__(self):
@@ -90,10 +96,8 @@ def check_spurious_tags(y_true: list, y_pred: list):
 
     for pred in tags_pred:
         if pred not in tags_true:
-
-            logging.error(
-                f"Spurious entity label '{pred}' in predictions. Tag is not part of the gold standard and ignored for in the evaluation."
-            )
+            msg = f"Spurious entity label '{pred}' in predictions. Tag is not part of the gold standard and ignored in the evaluation."
+            logging.error(msg)
 
 
 def read_conll_annotations(fname, glueing_col_pairs=None, structure_only=False):

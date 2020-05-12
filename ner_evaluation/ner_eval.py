@@ -119,7 +119,9 @@ class Evaluator:
         try:
             assert data_format_true == data_format_pred
         except AssertionError:
-            raise AssertionError("Data mismatch between true and prediction dataset")
+            msg = "Data mismatch between true and prediction dataset due to wrong segmentation or missing lines"
+            logging.error(msg)
+            raise AssertionError(msg)
 
     def reconstruct_segmentation(self):
         """Restructure the flat segmentation of the system annotations.

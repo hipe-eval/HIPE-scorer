@@ -131,6 +131,7 @@ def enforce_filename(fname):
             "The filename needs to comply with shared task requirements. "
             + "Please rename accordingly: TEAMNAME_TASKBUNDLEID_LANG_RUNNUMBER.tsv"
         )
+        logging.error(msg)
         raise AssertionError(msg)
 
     return submission, lang

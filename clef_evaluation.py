@@ -126,10 +126,10 @@ def enforce_filename(fname):
         assert lang in ("de", "fr", "en")
         assert bundle in range(1, 6)
 
-    except (ValueError, AssertionError) as e:
+    except (ValueError, AssertionError):
         msg = (
-            "The filename needs to comply with shared task requirements. "
-            + "Please rename accordingly: TEAMNAME_TASKBUNDLEID_LANG_RUNNUMBER.tsv"
+            "The filename of the system response '{self.f_pred}' needs to comply with the shared task requirements. "
+            + "Rename according to the following scheme: TEAMNAME_TASKBUNDLEID_LANG_RUNNUMBER.tsv"
         )
         logging.error(msg)
         raise AssertionError(msg)
@@ -303,12 +303,12 @@ def assemble_tsv_output(
 
 def check_validity_of_arguments(args):
     if args.task != "nel" and (args.union or args.n_best > 1):
-        msg = "Alternative annotations are only allowed for the NEL evaluation."
+        msg = "The provided arguments are not valid. Alternative annotations are only allowed for the NEL evaluation."
         logging.error(msg)
         raise AssertionError(msg)
 
     if args.union and args.n_best > 1:
-        msg = "Please restrict to a single alternative schema, either a ranked n-best list or the union of the metonymic and literal column."
+        msg = "The provided arguments are not valid. Restrict to a single alternative schema, either a ranked n-best list or the union of the metonymic and literal column."
         logging.error(msg)
         raise AssertionError(msg)
 

@@ -119,7 +119,7 @@ class Evaluator:
         try:
             assert data_format_true == data_format_pred
         except AssertionError:
-            msg = "Data mismatch between true and prediction dataset due to wrong segmentation or missing lines"
+            msg = "Data mismatch between system response '{self.f_pred}' and gold standard due to wrong segmentation or missing lines."
             logging.error(msg)
             raise AssertionError(msg)
 
@@ -143,9 +143,9 @@ class Evaluator:
                 toks_true = [tok.TOKEN for tok in doc_true]
                 if toks_true != toks_pred:
                     raise AssertionError(
-                        "The prediction file is not in line with the gold standard. "
+                        "The system response '{self.f_pred}' is not in line with the gold standard. "
                         + "The attempt to reconstruct the segmentation failed. "
-                        + f"The mismatch occured in document {i_doc_true + 1} regarding the gold standard and at token {tok_pos_start +1 } regarding the prediction file."
+                        + f"The mismatch occured in document {i_doc_true + 1} starting at token position {tok_pos_start +1} (Tokens: {toks_true}) wtr to the gold standard."
                     )
 
                 sents_pred.append(sent_pred)
@@ -156,7 +156,9 @@ class Evaluator:
 
         self.pred = docs_pred
 
-    def evaluate(self, columns: list, eval_type: str, tags: list = None, merge_lines=False, n_best=1):
+    def evaluate(
+        self, columns: list, eval_type: str, tags: list = None, merge_lines=False, n_best=1
+    ):
         """Collect extensive statistics across labels and per entity type.
 
         For both, document-averaged and entity-type averaged
@@ -180,7 +182,9 @@ class Evaluator:
 
         tags = self.set_evaluation_tags(columns, tags, eval_type)
 
-        logging.info(f"Evaluating on {columns} for the following tags: {tags}")
+        logging.info(
+            f"Evaluating system response '{self.f_pred}' on {columns} for the following tags: {tags}"
+        )
 
         # Create an accumulator to store overall results
         results = deepcopy(self.metric_schema)
@@ -204,7 +208,9 @@ class Evaluator:
                 # Compute result for one segment
                 if eval_type == "nerc":
                     seg_results, seg_results_per_type = self.compute_metrics(
-                        collect_named_entities(y_true_seg, columns), collect_named_entities(y_pred_seg, columns), tags,
+                        collect_named_entities(y_true_seg, columns),
+                        collect_named_entities(y_pred_seg, columns),
+                        tags,
                     )
                 elif eval_type == "nel":
                     seg_results, seg_results_per_type = self.compute_metrics(
@@ -225,7 +231,9 @@ class Evaluator:
 
             # Compute document-level metrics by entity type
             for e_type in results_per_type:
-                doc_results_per_type[e_type] = compute_precision_recall_wrapper(doc_results_per_type[e_type])
+                doc_results_per_type[e_type] = compute_precision_recall_wrapper(
+                    doc_results_per_type[e_type]
+                )
                 results_per_type[e_type] = self.accumulate_doc_scores(
                     results_per_type[e_type], doc_results_per_type[e_type]
                 )
@@ -294,7 +302,9 @@ class Evaluator:
 
                 # Aggregate metrics by entity type
                 for e_type in tmp_results_per_type:
-                    results_per_type[e_type][eval_schema][metric] += tmp_results_per_type[e_type][eval_schema][metric]
+                    results_per_type[e_type][eval_schema][metric] += tmp_results_per_type[e_type][
+                        eval_schema
+                    ][metric]
 
         return results, results_per_type
 
@@ -329,7 +339,9 @@ class Evaluator:
         # only allow alternatives in prediction file, not in gold standard
         true_named_entities = [ent[0] for ent in true_named_entities if ent[0].e_type in tags]
         # pred_named_entities = [ent for ent in pred_named_entities if [ent[0]].e_type in tags]
-        pred_named_entities = [ent for ent in pred_named_entities if any([e.e_type in tags for e in ent])]
+        pred_named_entities = [
+            ent for ent in pred_named_entities if any([e.e_type in tags for e in ent])
+        ]
 
         # go through each predicted named-entity
         for pred in pred_named_entities:
@@ -396,7 +408,10 @@ class Evaluator:
                     # check for an overlap, i.e. not exact boundary match, with true entities
                     # NOTE: error in original code:
                     # overlaps with true entities must only counted once
-                    elif find_overlap(true_range, pred_range) and true not in true_which_overlapped_with_pred:
+                    elif (
+                        find_overlap(true_range, pred_range)
+                        and true not in true_which_overlapped_with_pred
+                    ):
 
                         true_which_overlapped_with_pred.append(true)
                         found_overlap = True
@@ -513,7 +528,9 @@ class Evaluator:
             # level results.
             for eval_type in entity_level:
                 # if eval_type != "slot_error_rate":
-                evaluation_agg_entities_type[entity_type][eval_type] = compute_actual_possible(entity_level[eval_type])
+                evaluation_agg_entities_type[entity_type][eval_type] = compute_actual_possible(
+                    entity_level[eval_type]
+                )
 
         return evaluation, evaluation_agg_entities_type
 
@@ -524,11 +541,10 @@ class Evaluator:
             y_pred = []
             for col in columns:
                 y_pred += [column_selector(doc, col) for doc in self.pred]
-
         except AttributeError:
-            msg = f"Provided annotation columns {columns} is not available for both predicted and true file"
+            msg = f"The provided annotation columns {columns} are not available in both the gold standard and the system response '{self.f_pred}'."
             logging.error(msg)
-            check_validity_of_arguments
+            raise AssertionError(msg)
 
         true_tags = get_all_tags(y_true)
         pred_tags = get_all_tags(y_pred)
@@ -542,7 +558,7 @@ class Evaluator:
             check_spurious_tags(y_true, y_pred)
 
             if not pred_tags:
-                msg = f"There are no tags in the system response file for the column: {columns}"
+                msg = f"There are no tags in the system response file '{self.f_pred}' for the column: {columns}"
                 logging.error(msg)
                 raise AssertionError(msg)
 
@@ -632,7 +648,9 @@ def compute_precision_recall(results, partial=False):
 
     results["P_micro"] = precision
     results["R_micro"] = recall
-    results["F1_micro"] = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+    results["F1_micro"] = (
+        2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+    )
 
     return results
 
@@ -642,12 +660,18 @@ def compute_precision_recall_wrapper(results):
     Wraps the compute_precision_recall function and runs it for each evaluation scenario in results
     """
 
-    results_a = {key: compute_precision_recall(value, True) for key, value in results.items() if key in ["partial"]}
+    results_a = {
+        key: compute_precision_recall(value, True)
+        for key, value in results.items()
+        if key in ["partial"]
+    }
 
     # in the entity type matching scenario (fuzzy),
     # overlapping entities and entities with strict boundary matches are rewarded equally
     results_b = {
-        key: compute_precision_recall(value) for key, value in results.items() if key in ["strict", "exact", "ent_type"]
+        key: compute_precision_recall(value)
+        for key, value in results.items()
+        if key in ["strict", "exact", "ent_type"]
     }
 
     # TODO: compute SER

@@ -711,9 +711,9 @@ def compute_macro_type_scores(results, results_per_type):
             recall_sum += results_per_type[tag][eval_schema]["R_micro"]
             f1_sum += results_per_type[tag][eval_schema]["F1_micro"]
 
-        precision_macro = precision_sum / n_tags
-        recall_macro = recall_sum / n_tags
-        f1_macro_mean = f1_sum / n_tags
+        precision_macro = precision_sum / n_tags if n_tags > 0 else 0
+        recall_macro = recall_sum / n_tags if n_tags > 0 else 0
+        f1_macro_mean = f1_sum / n_tags if n_tags > 0 else 0
         f1_macro_recomp = (
             2 * (precision_macro * recall_macro) / (precision_macro + recall_macro)
             if (precision_macro + recall_macro) > 0

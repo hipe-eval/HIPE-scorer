@@ -119,7 +119,7 @@ class Evaluator:
         try:
             assert data_format_true == data_format_pred
         except AssertionError:
-            msg = "Data mismatch between system response '{self.f_pred}' and gold standard due to wrong segmentation or missing lines."
+            msg = f"Data mismatch between system response '{self.f_pred}' and gold standard due to wrong segmentation or missing lines."
             logging.error(msg)
             raise AssertionError(msg)
 
@@ -143,7 +143,7 @@ class Evaluator:
                 toks_true = [tok.TOKEN for tok in doc_true]
                 if toks_true != toks_pred:
                     raise AssertionError(
-                        "The system response '{self.f_pred}' is not in line with the gold standard. "
+                        f"The system response '{self.f_pred}' is not in line with the gold standard. "
                         + "The attempt to reconstruct the segmentation failed. "
                         + f"The mismatch occured in document {i_doc_true + 1} starting at token position {tok_pos_start +1} (Tokens: {toks_true}) wtr to the gold standard."
                     )

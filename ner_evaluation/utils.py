@@ -285,26 +285,26 @@ def collect_link_objects(tokens, cols, n_best=1):
 
     # allow alternative annotations with the same on/offset as the primary one
     links_union = []
-    if n_best > 1:
-        # alternative annotations provided in same cell, separated by a pipe
+
+    if len(cols) > 1:
+        # alternative annotations provided in separate columns
+        for link in links:
+            union = []
+
+            for col in cols:
+                token_tag = getattr(tokens[link.start_offset], col)
+                union.append(Entity(token_tag, link.start_offset, link.end_offset))
+
+            links_union.append(union)
+    else:
+        # standard NEL evaluation that considers a n_best links of a ranked list
+        # links are separated by pipes in a single cell.
         for link in links:
             union = []
             n_best_links = link.e_type.split("|")[:n_best]
 
             for tag in n_best_links:
                 union.append(Entity(tag, link.start_offset, link.end_offset))
-
-            links_union.append(union)
-
-    else:
-        # alternative annotations provided in separate columns
-        for link in links:
-            union = []
-            start_offset = link.start_offset
-
-            for col in cols:
-                token_tag = getattr(tokens[link.start_offset], col)
-                union.append(Entity(token_tag, link.start_offset, link.end_offset))
 
             links_union.append(union)
 

@@ -77,10 +77,8 @@ def parse_args():
         "--n_best",
         required=False,
         action="store",
-        type=int,
-        default=1,
         dest="n_best",
-        help="limits the number of annotations to n-best when ranked alternatives are provided within a single cell, separated by a pipe",
+        help="limit the number of alternative entity links if multiple separate by a comma. Alternative links are separated by a pipe in a single cell",
     )
 
     parser.add_argument(
@@ -153,7 +151,7 @@ def evaluation_wrapper(evaluator, eval_type, cols, n_best=1):
 
 
 def get_results(
-    f_ref, f_pred, task, skip_check=False, glueing_cols=None, n_best=1, union=False, outdir="."
+    f_ref, f_pred, task, skip_check=False, glueing_cols=None, n_best=[1], union=False, outdir="."
 ):
 
     if not skip_check:
@@ -183,21 +181,12 @@ def get_results(
         fieldnames, rows = assemble_tsv_output(submission, eval_stats)
 
     elif task == "nel" and not union:
-        eval_stats = evaluation_wrapper(evaluator, eval_type="nel", cols=NEL_COLUMNS, n_best=1)
-        fieldnames, rows = assemble_tsv_output(
-            submission, eval_stats, regimes=["fuzzy"], only_aggregated=True, suffix=f"best@1",
-        )
-        if n_best > 1:
-            # compute also n-best result
-            eval_stats = evaluation_wrapper(
-                evaluator, eval_type="nel", cols=NEL_COLUMNS, n_best=n_best
-            )
-            _, rows_n_best = assemble_tsv_output(
-                submission,
-                eval_stats,
-                regimes=["fuzzy"],
-                only_aggregated=True,
-                suffix=f"best@{n_best}",
+        rows = []
+        # evaluate for various n-best
+        for n in n_best:
+            eval_stats = evaluation_wrapper(evaluator, eval_type="nel", cols=NEL_COLUMNS, n_best=n)
+            fieldnames, rows_n_best = assemble_tsv_output(
+                submission, eval_stats, regimes=["fuzzy"], only_aggregated=True, suffix=f"best@{n}",
             )
             rows += rows_n_best
 
@@ -302,13 +291,13 @@ def assemble_tsv_output(
 
 
 def check_validity_of_arguments(args):
-    if args.task != "nel" and (args.union or args.n_best > 1):
+    if args.task != "nel" and (args.union or args.n_best):
         msg = "The provided arguments are not valid. Alternative annotations are only allowed for the NEL evaluation."
         logging.error(msg)
         raise AssertionError(msg)
 
-    if args.union and args.n_best > 1:
-        msg = "The provided arguments are not valid. Restrict to a single alternative schema, either a ranked n-best list or the union of the metonymic and literal column."
+    if args.union and args.n_best:
+        msg = "The provided arguments are not valid. Restrict to a single evaluation schema for NEL, either a ranked n-best list or the union of the metonymic and literal column."
         logging.error(msg)
         raise AssertionError(msg)
 
@@ -329,6 +318,11 @@ def main():
         print(e)
         sys.exit(1)
 
+    if not args.n_best:
+        n_best = [1]
+    else:
+        n_best = [int(n) for n in args.n_best.split(",")]
+
     try:
         get_results(
             args.f_ref,
@@ -336,7 +330,7 @@ def main():
             args.task,
             args.skip_check,
             args.glueing_cols,
-            args.n_best,
+            n_best,
             args.union,
             args.outdir,
         )

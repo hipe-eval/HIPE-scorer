@@ -560,7 +560,6 @@ class Evaluator:
             if not pred_tags:
                 msg = f"There are no tags in the system response file '{self.f_pred}' for the column: {columns}"
                 logging.error(msg)
-                raise AssertionError(msg)
 
         elif eval_type == "nel":
             # For NEL, any tag in gold standard or predictions are considered

@@ -126,7 +126,7 @@ def enforce_filename(fname):
 
     except (ValueError, AssertionError):
         msg = (
-            "The filename of the system response '{self.f_pred}' needs to comply with the shared task requirements. "
+            f"The filename of the system response '{fname}' needs to comply with the shared task requirements. "
             + "Rename according to the following scheme: TEAMNAME_TASKBUNDLEID_LANG_RUNNUMBER.tsv"
         )
         logging.error(msg)

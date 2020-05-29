@@ -107,6 +107,13 @@ def parse_args():
         dest="outdir",
         help="name of output directory",
     )
+    parser.add_argument(
+        "--suffix",
+        action="store",
+        default="",
+        dest="suffix",
+        help="Suffix to append at output file names",
+    )
 
     return parser.parse_args()
 
@@ -151,7 +158,15 @@ def evaluation_wrapper(evaluator, eval_type, cols, n_best=1):
 
 
 def get_results(
-    f_ref, f_pred, task, skip_check=False, glueing_cols=None, n_best=[1], union=False, outdir="."
+    f_ref,
+    f_pred,
+    task,
+    skip_check=False,
+    glueing_cols=None,
+    n_best=[1],
+    union=False,
+    outdir=".",
+    suffix="",
 ):
 
     if not skip_check:
@@ -160,9 +175,12 @@ def get_results(
         submission = f_pred
         lang = "LANG"
 
+    if suffix:
+        suffix = "_" + suffix
+
     f_sub = pathlib.Path(f_pred)
-    f_tsv = str(pathlib.Path(outdir) / f_sub.name.replace(".tsv", f"_{task}_results.tsv"))
-    f_json = str(pathlib.Path(outdir) / f_sub.name.replace(".tsv", f"_{task}_results.json"))
+    f_tsv = str(pathlib.Path(outdir) / f_sub.name.replace(".tsv", f"_{task}{suffix}.tsv"))
+    f_json = str(pathlib.Path(outdir) / f_sub.name.replace(".tsv", f"_{task}{suffix}.json"))
 
     if glueing_cols:
         glueing_pairs = glueing_cols.split(",")
@@ -333,6 +351,7 @@ def main():
             n_best,
             args.union,
             args.outdir,
+            args.suffix,
         )
     except AssertionError as err:
         print(err)

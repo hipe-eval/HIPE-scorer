@@ -1,22 +1,28 @@
 #!/usr/bin/env python
 # coding: utf-8
+
 """
 Normalize entity linking by remapping linkgs according to an external file
 
 Usage:
-    lib/normalize_linking.py -i=<fpath> -o=<fpath> -m=<fpath>
+    lib/normalize_linking.py -i=<fpath> -o=<fpath> --norm-time [options]
+    lib/normalize_linking.py -i=<fpath> -o=<fpath> --map=<fpath> --norm-histo [options]
+    lib/normalize_linking.py -i=<fpath> -o=<fpath> --norm-time --map=<fpath> --norm-histo [options]
 
 Options:
     -h --help               Show this screen.
     -i --in=<fpath>         File path to original system response.
     -o --out=<fpath>        File path to normalized system response.
     -m --map=<fpath>        File path to link mapping.
-
+    --norm-time             Normalize NEL for time mentions.
+    --norm-histo            Normalize NEL for historical entities
+    --union-meto-lit        Unionize literal and metonymic columns (apply on both columns)
 """
 
 import csv
 import pandas as pd
 from docopt import docopt
+import itertools
 
 
 def get_mappings(f_map):
@@ -29,30 +35,78 @@ def get_mappings(f_map):
     return mapping
 
 
-def normalize_n_to_n(f_in: str, f_out: str, mapping: dict):
+def normalize_n_to_n(df: pd.DataFrame, mapping: dict):
     """
-    Read a dataset, remap linking alternatives to a common main identity,
-    and save as new dataset.
+    Remap linking alternatives to a common main identity.
     """
 
-    df_subm = pd.read_csv(f_in, sep="\t", quoting=csv.QUOTE_NONE, quotechar="")
-    df_subm = df_subm.fillna(value={"NEL-LIT": "", "NEL-METO": ""})
+    try:
+        # remap literal NEL column
+        df["NEL-LIT"] = df["NEL-LIT"].str.split("|")
+        df["NEL-LIT"] = df["NEL-LIT"].apply(
+            lambda row: [mapping[k] if mapping.get(k) else k for k in row]
+        )
+        df["NEL-LIT"] = df["NEL-LIT"].str.join("|")
 
-    # remap literal NEL column
-    df_subm["NEL-LIT"] = df_subm["NEL-LIT"].str.split("|")
-    df_subm["NEL-LIT"] = df_subm["NEL-LIT"].apply(
-        lambda row: [mapping[k] if mapping.get(k) else k for k in row]
-    )
-    df_subm["NEL-LIT"] = df_subm["NEL-LIT"].str.join("|")
+        # remap metonymic NEL column
+        df["NEL-METO"] = df["NEL-METO"].str.split("|")
+        df["NEL-METO"] = df["NEL-METO"].apply(
+            lambda row: [mapping[k] if mapping.get(k) else k for k in row]
+        )
+        df["NEL-METO"] = df["NEL-METO"].str.join("|")
+    except KeyError:
+        pass
 
-    # remap metonymic NEL column
-    df_subm["NEL-METO"] = df_subm["NEL-METO"].str.split("|")
-    df_subm["NEL-METO"] = df_subm["NEL-METO"].apply(
-        lambda row: [mapping[k] if mapping.get(k) else k for k in row]
-    )
-    df_subm["NEL-METO"] = df_subm["NEL-METO"].str.join("|")
+    return df
 
-    df_subm.to_csv(f_out, index=False, sep="\t", quoting=csv.QUOTE_NONE, quotechar="")
+
+def unionize_meto_lit(df: pd.DataFrame):
+    """
+    Unionize the metonymic and the literal columns (apply on both columns).
+
+    The order is kept and a "EMPTY" is used as placeholder in case of mismatching
+    list length.
+
+    """
+
+    def union(list1, list2):
+        if list1[0]:
+            return list(
+                itertools.chain.from_iterable(
+                    itertools.zip_longest(list1, list2, fillvalue="EMPTY")
+                )
+            )
+        else:
+            return [""]
+
+    try:
+        df["NEL-LIT"] = df["NEL-LIT"].str.split("|")
+        df["NEL-METO"] = df["NEL-METO"].str.split("|")
+
+        df["NEL-METO"] = (
+            df[["NEL-METO", "NEL-LIT"]].dropna().apply(lambda x: union(x[0], x[1]), axis=1)
+        )
+        df["NEL-LIT"] = (
+            df[["NEL-LIT", "NEL-METO"]].dropna().apply(lambda x: union(x[0], x[1]), axis=1)
+        )
+
+        df["NEL-METO"] = df["NEL-METO"].str.join("|")
+        df["NEL-LIT"] = df["NEL-METO"].str.join("|")
+
+    except KeyError:
+        pass
+
+    return df
+
+
+def remove_time_linking(df, replacement="_"):
+    try:
+        df.loc[df["NE-COARSE-LIT"].str.contains("time"), "NEL-LIT"] = replacement
+        df.loc[df["NE-COARSE-LIT"].str.contains("time"), "NEL-METO"] = replacement
+    except KeyError:
+        pass
+
+    return df
 
 
 def main(args):
@@ -60,10 +114,24 @@ def main(args):
     f_in = args["--in"]
     f_out = args["--out"]
     f_map = args["--map"]
+    norm_time = args["--norm-time"]
+    norm_histo = args["--norm-histo"]
+    unionize = args["--union-meto-lit"]
 
-    mappings = get_mappings(f_map)
+    df = pd.read_csv(f_in, sep="\t", quoting=csv.QUOTE_NONE, quotechar="")
+    df = df.fillna(value={"NE-COARSE-LIT": "", "NEL-LIT": "", "NEL-METO": ""})
 
-    normalize_n_to_n(f_in, f_out, mappings)
+    if norm_histo:
+        mappings = get_mappings(f_map)
+        df = normalize_n_to_n(df, mappings)
+
+    if norm_time:
+        df = remove_time_linking(df)
+
+    if unionize:
+        df = unionize_meto_lit(df)
+
+    df.to_csv(f_out, index=False, sep="\t", quoting=csv.QUOTE_NONE, quotechar="")
 
 
 if __name__ == "__main__":

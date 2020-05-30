@@ -64,7 +64,7 @@ def unionize_meto_lit(df: pd.DataFrame):
     """
     Unionize the metonymic and the literal columns (apply on both columns).
 
-    The order is kept and a "EMPTY" is used as placeholder in case of mismatching
+    The order is kept and "EMPTY" is used as placeholder in case of mismatching
     list length.
 
     """
@@ -83,15 +83,19 @@ def unionize_meto_lit(df: pd.DataFrame):
         df["NEL-LIT"] = df["NEL-LIT"].str.split("|")
         df["NEL-METO"] = df["NEL-METO"].str.split("|")
 
-        df["NEL-METO"] = (
-            df[["NEL-METO", "NEL-LIT"]].dropna().apply(lambda x: union(x[0], x[1]), axis=1)
-        )
-        df["NEL-LIT"] = (
+
+        df["NEL-LIT-UNION"] = (
             df[["NEL-LIT", "NEL-METO"]].dropna().apply(lambda x: union(x[0], x[1]), axis=1)
         )
+        df["NEL-METO-UNION"] = (
+            df[["NEL-METO", "NEL-LIT"]].dropna().apply(lambda x: union(x[0], x[1]), axis=1)
+        )
 
-        df["NEL-METO"] = df["NEL-METO"].str.join("|")
-        df["NEL-LIT"] = df["NEL-METO"].str.join("|")
+        df["NEL-LIT"] = df["NEL-LIT-UNION"].str.join("|")
+        df["NEL-METO"] = df["NEL-METO-UNION"].str.join("|")
+
+        # remove intermediate results
+        df.drop(columns=['NEL-LIT-UNION', 'NEL-METO-UNION'])
 
     except KeyError:
         pass
@@ -99,7 +103,7 @@ def unionize_meto_lit(df: pd.DataFrame):
     return df
 
 
-def remove_time_linking(df, replacement="_"):
+def remove_time_linking(df, replacement="NIL"):
     try:
         df.loc[df["NE-COARSE-LIT"].str.contains("time"), "NEL-LIT"] = replacement
         df.loc[df["NE-COARSE-LIT"].str.contains("time"), "NEL-METO"] = replacement
@@ -118,7 +122,7 @@ def main(args):
     norm_histo = args["--norm-histo"]
     unionize = args["--union-meto-lit"]
 
-    df = pd.read_csv(f_in, sep="\t", quoting=csv.QUOTE_NONE, quotechar="")
+    df = pd.read_csv(f_in, sep="\t", quoting=csv.QUOTE_NONE, quotechar="", skip_blank_lines=False)
     df = df.fillna(value={"NE-COARSE-LIT": "", "NEL-LIT": "", "NEL-METO": ""})
 
     if norm_histo:

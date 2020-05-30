@@ -38,7 +38,7 @@ class TokAnnotation:
 
 def get_all_tags(y_true):
     """
-    Return a set of all tags excluding non-annotations (i.e. "_", "O")
+    Return a set of all tags excluding non-annotations (i.e. "_", "O", "-")
 
     :param list y_true: a nested list of labels with the structure "[docs [sents [tokens]]]".
     :return: set of all labels.
@@ -47,10 +47,18 @@ def get_all_tags(y_true):
 
     # keep only primary annotation when separated by a pipe
     tags = {label.split("|")[0].split("-")[-1] for doc in y_true for seg in doc for label in seg}
-    if "_" in tags:
-        tags.remove("_")
-    if "O" in tags:
-        tags.remove("O")
+
+    non_tags = [
+        "_",
+        "-",
+        "O",
+    ]
+
+    for symbol in non_tags:
+        try:
+            tags.remove(symbol)
+        except KeyError:
+            pass
 
     return tags
 
@@ -74,7 +82,6 @@ def check_tag_selection(y_cand: list, tags_ref: list):
             logging.info(
                 f"Selected tag '{tag}' is not covered by the gold data set and ignored for in the evaluation."
             )
-
         else:
             clean_tags.add(tag)
 
@@ -255,7 +262,7 @@ def collect_link_objects(tokens, cols, n_best=1):
 
         token_tag = getattr(token, cols[0])
 
-        if token_tag == "_":
+        if token_tag in ("_", "-"):
             # end of a nel object
             if ent_type is not None and start_offset is not None:
                 end_offset = offset - 1

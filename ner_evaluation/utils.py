@@ -23,7 +23,7 @@ class TokAnnotation:
                 try:
                     v = v.upper()
                 except AttributeError:
-                    msg = f"There are empty values in column '{k}'. They get replaced by an underscore."
+                    msg = f"Empty values in column '{k}'. They get replaced by an underscore."
                     logging.warning(msg)
                     v = "_"
 
@@ -88,7 +88,7 @@ def check_tag_selection(y_cand: list, tags_ref: list):
     return clean_tags
 
 
-def check_spurious_tags(y_true: list, y_pred: list):
+def check_spurious_tags(y_true: list, y_pred: list, columns: list):
     """Log any tags of the system response which are not in the gold standard.
 
     :param list y_true: a nested list of gold labels with the structure "[docs [sents [tokens]]]".
@@ -103,7 +103,7 @@ def check_spurious_tags(y_true: list, y_pred: list):
 
     for pred in tags_pred:
         if pred not in tags_true:
-            msg = f"Spurious entity label '{pred}' in predictions. Tag is not part of the gold standard and ignored in the evaluation."
+            msg = f"Spurious entity label '{pred}' in column {columns} in system response, which is part of the gold standard. Tag is ignored in the evaluation."
             logging.error(msg)
 
 

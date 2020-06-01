@@ -18,7 +18,6 @@ from ner_evaluation.utils import (
     get_all_tags,
     column_selector,
     check_tag_selection,
-    check_spurious_tags,
 )
 
 
@@ -44,6 +43,9 @@ class Evaluator:
         :return: Evaluator object.
 
         """
+
+        logging.info(f"Reading system response file '{f_pred}' and gold standard '{f_true}'.")
+
         self.f_true = f_true
         self.f_pred = f_pred
 
@@ -105,7 +107,8 @@ class Evaluator:
         }
 
     def check_segment_mismatch(self):
-        """Assert the alignment between gold standard and the system response.
+        """
+        Assert the alignment between gold standard and the system response.
         """
 
         logging.info("Datasets imported (Gold/Predictions).")
@@ -180,11 +183,10 @@ class Evaluator:
         if isinstance(columns, str):
             columns = [columns]
 
-        tags = self.set_evaluation_tags(columns, tags, eval_type)
+        logging.info(f"Evaluating column {columns} in system response file '{self.f_pred}'")
 
-        logging.info(
-            f"Evaluating system response '{self.f_pred}' on {columns} for the following tags: {tags}"
-        )
+        tags = self.set_evaluation_tags(columns, tags, eval_type)
+        logging.info(f"Evaluation on the following tags: {tags}")
 
         # Create an accumulator to store overall results
         results = deepcopy(self.metric_schema)
@@ -338,7 +340,6 @@ class Evaluator:
 
         # only allow alternatives in prediction file, not in gold standard
         true_named_entities = [ent[0] for ent in true_named_entities if ent[0].e_type in tags]
-        # pred_named_entities = [ent for ent in pred_named_entities if [ent[0]].e_type in tags]
         pred_named_entities = [
             ent for ent in pred_named_entities if any([e.e_type in tags for e in ent])
         ]
@@ -542,7 +543,7 @@ class Evaluator:
             for col in columns:
                 y_pred += [column_selector(doc, col) for doc in self.pred]
         except AttributeError:
-            msg = f"The provided annotation columns {columns} are not available in both the gold standard and the system response '{self.f_pred}'."
+            msg = f"Missing columns {columns} in the system response file '{self.f_pred}' or the gold standard."
             logging.error(msg)
             raise AssertionError(msg)
 
@@ -555,10 +556,10 @@ class Evaluator:
         elif eval_type == "nerc":
             # For NERC, only tags which are covered by the gold standard are considered
             tags = true_tags
-            check_spurious_tags(y_true, y_pred)
+            self.check_spurious_tags(y_true, y_pred, columns)
 
             if not pred_tags:
-                msg = f"There are no tags in the system response file '{self.f_pred}' for the column: {columns}"
+                msg = f"No tags in the column '{columns}' of the system response file: '{self.f_pred}'"
                 logging.error(msg)
 
         elif eval_type == "nel":
@@ -566,6 +567,24 @@ class Evaluator:
             tags = true_tags | pred_tags
 
         return tags
+
+    def check_spurious_tags(self, y_true: list, y_pred: list, columns: list):
+        """Log any tags of the system response which are not in the gold standard.
+
+        :param list y_true: a nested list of gold labels with the structure "[docs [sents [tokens]]]".
+        :param list y_pred: a nested list of system labels with the structure "[docs [sents [tokens]]]".
+        :return: None.
+        :rtype: None
+
+        """
+
+        tags_true = get_all_tags(y_true)
+        tags_pred = get_all_tags(y_pred)
+
+        for pred in tags_pred:
+            if pred not in tags_true:
+                msg = f"Spurious entity label '{pred}' in column {columns} of system response file: '{self.f_pred}'. As the tag is not part of the gold standard, it is ignored in the evaluation."
+                logging.error(msg)
 
 
 def find_overlap(true_range, pred_range):

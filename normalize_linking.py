@@ -83,7 +83,6 @@ def unionize_meto_lit(df: pd.DataFrame):
         df["NEL-LIT"] = df["NEL-LIT"].str.split("|")
         df["NEL-METO"] = df["NEL-METO"].str.split("|")
 
-
         df["NEL-LIT-UNION"] = (
             df[["NEL-LIT", "NEL-METO"]].dropna().apply(lambda x: union(x[0], x[1]), axis=1)
         )
@@ -95,7 +94,7 @@ def unionize_meto_lit(df: pd.DataFrame):
         df["NEL-METO"] = df["NEL-METO-UNION"].str.join("|")
 
         # remove intermediate results
-        df.drop(columns=['NEL-LIT-UNION', 'NEL-METO-UNION'])
+        df = df.drop(columns=["NEL-LIT-UNION", "NEL-METO-UNION"])
 
     except KeyError:
         pass

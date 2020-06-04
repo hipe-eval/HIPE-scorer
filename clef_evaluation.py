@@ -115,6 +115,10 @@ def parse_args():
         help="Suffix to append at output file names",
     )
 
+    parser.add_argument(
+        "--tagset", action="store", dest="f_tagset", help="file containing the valid tagset",
+    )
+
     return parser.parse_args()
 
 
@@ -142,13 +146,13 @@ def enforce_filename(fname):
     return submission, lang
 
 
-def evaluation_wrapper(evaluator, eval_type, cols, n_best=1):
+def evaluation_wrapper(evaluator, eval_type, cols, n_best=1, tags=None):
     eval_global = {}
     eval_per_tag = {}
 
     for col in cols:
         eval_global[col], eval_per_tag[col] = evaluator.evaluate(
-            col, eval_type=eval_type, tags=None, merge_lines=True, n_best=n_best
+            col, eval_type=eval_type, tags=tags, merge_lines=True, n_best=n_best
         )
 
         # add aggregated stats across types as artificial tag
@@ -167,6 +171,7 @@ def get_results(
     union=False,
     outdir=".",
     suffix="",
+    f_tagset=None,
 ):
 
     if not skip_check:
@@ -188,14 +193,22 @@ def get_results(
     else:
         glueing_col_pairs = None
 
+    if f_tagset:
+        with open(f_tagset) as f_in:
+            tagset = set(f_in.read().upper().splitlines())
+    else:
+        tagset = None
+
     evaluator = Evaluator(f_ref, f_pred, glueing_col_pairs)
 
     if task == "nerc_fine":
-        eval_stats = evaluation_wrapper(evaluator, eval_type="nerc", cols=FINE_COLUMNS)
+        eval_stats = evaluation_wrapper(evaluator, eval_type="nerc", cols=FINE_COLUMNS, tags=tagset)
         fieldnames, rows = assemble_tsv_output(submission, eval_stats)
 
     elif task == "nerc_coarse":
-        eval_stats = evaluation_wrapper(evaluator, eval_type="nerc", cols=COARSE_COLUMNS)
+        eval_stats = evaluation_wrapper(
+            evaluator, eval_type="nerc", cols=COARSE_COLUMNS, tags=tagset
+        )
         fieldnames, rows = assemble_tsv_output(submission, eval_stats)
 
     elif task == "nel" and not union:
@@ -358,6 +371,7 @@ def main():
             args.union,
             args.outdir,
             args.suffix,
+            args.f_tagset,
         )
     except AssertionError:
         # don't interrupt the pipeline

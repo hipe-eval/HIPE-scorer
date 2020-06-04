@@ -17,7 +17,6 @@ from ner_evaluation.utils import (
     collect_link_objects,
     get_all_tags,
     column_selector,
-    check_tag_selection,
 )
 
 
@@ -162,7 +161,7 @@ class Evaluator:
         self.pred = docs_pred
 
     def evaluate(
-        self, columns: list, eval_type: str, tags: list = None, merge_lines=False, n_best=1
+        self, columns: list, eval_type: str, tags: set = None, merge_lines=False, n_best=1
     ):
         """Collect extensive statistics across labels and per entity type.
 
@@ -174,7 +173,7 @@ class Evaluator:
 
         :param list columns: name of column that contains the annotations.
         :param str eval_type: define evaluation type for either links (nel) or entities (nerc).
-        :param list tags: Description of parameter `tags`.
+        :param set tags: limit evaluation to valid tag set.
         :param bool merge_lines: option to drop line segmentation to allow entity spans across lines.
         :param int n_best: number of alternative links that should be considered.
         :return: Aggregated statistics across labels and per entity type .
@@ -188,7 +187,6 @@ class Evaluator:
         logging.info(f"Evaluating column {columns} in system response file '{self.f_pred}'")
 
         tags = self.set_evaluation_tags(columns, tags, eval_type)
-        logging.info(f"Evaluation on the following tags: {tags}")
 
         # Create an accumulator to store overall results
         results = deepcopy(self.metric_schema)
@@ -553,12 +551,20 @@ class Evaluator:
         pred_tags = get_all_tags(y_pred)
 
         if tags:
-            logging.info(f"Provided tags for the column {columns}: {tags}")
-            tags = check_tag_selection(y_true, tags)
+            logging.info(f"Evaluation is limited to the provided tag set: {tags}")
+            self.check_spurious_tags(tags, pred_tags, columns)
+
+            # take the union of the actual gold standard labels and
+            # labels of the response file that are valid even when not included
+            # in gold standard of this particular column
+            # Other spurious tags are treated as non-entity ('O' tag).
+
+            tags = true_tags | {tag for tag in pred_tags if tag in tags}
+
         elif eval_type == "nerc":
             # For NERC, only tags which are covered by the gold standard are considered
             tags = true_tags
-            self.check_spurious_tags(y_true, y_pred, columns)
+            self.check_spurious_tags(true_tags, pred_tags, columns)
 
             if not pred_tags:
                 msg = f"No tags in the column '{columns}' of the system response file: '{self.f_pred}'"
@@ -568,20 +574,19 @@ class Evaluator:
             # For NEL, any tag in gold standard or predictions are considered
             tags = true_tags | pred_tags
 
+        logging.info(f"Evaluating on the following tags: {tags}")
+
         return tags
 
-    def check_spurious_tags(self, y_true: list, y_pred: list, columns: list):
+    def check_spurious_tags(self, tags_true: set, tags_pred: set, columns: list):
         """Log any tags of the system response which are not in the gold standard.
 
-        :param list y_true: a nested list of gold labels with the structure "[docs [sents [tokens]]]".
-        :param list y_pred: a nested list of system labels with the structure "[docs [sents [tokens]]]".
+        :param list tags_true: a set of true labels".
+        :param list tags_pred: a set of system labels".
         :return: None.
         :rtype: None
 
         """
-
-        tags_true = get_all_tags(y_true)
-        tags_pred = get_all_tags(y_pred)
 
         for pred in tags_pred:
             if pred not in tags_true:

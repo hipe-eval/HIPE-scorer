@@ -63,43 +63,15 @@ def get_all_tags(y_true):
     return tags
 
 
-def check_tag_selection(y_cand: list, tags_ref: list):
-    """Select only tags that are in the reference set and log dismissed tags.
-
-    :param list y_cand: a nested list of labels with the structure "[docs [sents [tokens]]]".
-    :param list tags_ref: a list of of reference tags.
-    :return: a set with cleaned tags according to the reference
-    :rtype: set
-
-    """
-
-    tags_cand = get_all_tags(y_cand)
-
-    clean_tags = set()
-
-    for tag in tags_cand:
-        if tag not in tags_ref:
-            logging.info(
-                f"Selected tag '{tag}' is not covered by the gold data set and ignored for in the evaluation."
-            )
-        else:
-            clean_tags.add(tag)
-
-    return clean_tags
-
-
-def check_spurious_tags(y_true: list, y_pred: list, columns: list):
+def check_spurious_tags(tags_true: set, tags_pred: set, columns: list):
     """Log any tags of the system response which are not in the gold standard.
 
-    :param list y_true: a nested list of gold labels with the structure "[docs [sents [tokens]]]".
-    :param list y_pred: a nested list of system labels with the structure "[docs [sents [tokens]]]".
+    :param list tags_true: a set of true labels".
+    :param list tags_pred: a set of system labels".
     :return: None.
     :rtype: None
 
     """
-
-    tags_true = get_all_tags(y_true)
-    tags_pred = get_all_tags(y_pred)
 
     for pred in tags_pred:
         if pred not in tags_true:

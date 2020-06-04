@@ -323,12 +323,18 @@ def check_validity_of_arguments(args):
 def main():
     args = parse_args()
 
+    # log to file
     logging.basicConfig(
         filename=args.f_log,
         filemode="w",
         level=logging.DEBUG,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
+
+    # log errors also to console
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(logging.ERROR)
+    logging.getLogger().addHandler(handler)
 
     try:
         check_validity_of_arguments(args)
@@ -353,8 +359,9 @@ def main():
             args.outdir,
             args.suffix,
         )
-    except AssertionError as err:
-        print(err)
+    except AssertionError:
+        # don't interrupt the pipeline
+        pass
 
 
 ################################################################################

@@ -145,11 +145,13 @@ class Evaluator:
                 toks_pred = [tok.TOKEN for tok in sent_pred]
                 toks_true = [tok.TOKEN for tok in doc_true]
                 if toks_true != toks_pred:
-                    raise AssertionError(
+                    msg = (
                         f"The system response '{self.f_pred}' is not in line with the gold standard. "
                         + "The attempt to reconstruct the segmentation failed. "
                         + f"The mismatch occured in document {i_doc_true + 1} starting at token position {tok_pos_start +1} (Tokens: {toks_true}) wtr to the gold standard."
                     )
+                    logging.error(msg)
+                    raise AssertionError
 
                 sents_pred.append(sent_pred)
                 tok_pos_start += n_doc_sent_true

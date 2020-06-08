@@ -32,7 +32,7 @@ def parse_args():
         required=True,
         action="store",
         dest="f_ref",
-        help="path to gold standard file in CONNL-U format",
+        help="path to gold standard file in CONLL-U-style format",
     )
 
     parser.add_argument(
@@ -41,7 +41,7 @@ def parse_args():
         required=True,
         action="store",
         dest="f_pred",
-        help="path to system prediction file in CONNL-U format",
+        help="path to system prediction file in CONLL-U-style format",
     )
 
     parser.add_argument(

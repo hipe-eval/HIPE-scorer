@@ -78,7 +78,7 @@ def parse_args():
         required=False,
         action="store",
         dest="n_best",
-        help="limit the number of alternative entity links if multiple separate by a comma. Alternative links are separated by a pipe in a single cell",
+        help="evaluate at particular cutoff value(s) for an ordered list of entity links, separate with a comma if multiple cutoffs. Link lists use a pipe as separator.",
     )
 
     parser.add_argument(
@@ -180,13 +180,6 @@ def get_results(
         submission = f_pred
         lang = "LANG"
 
-    if suffix:
-        suffix = "_" + suffix
-
-    f_sub = pathlib.Path(f_pred)
-    f_tsv = str(pathlib.Path(outdir) / f_sub.name.replace(".tsv", f"_{task}{suffix}.tsv"))
-    f_json = str(pathlib.Path(outdir) / f_sub.name.replace(".tsv", f"_{task}{suffix}.json"))
-
     if glueing_cols:
         glueing_pairs = glueing_cols.split(",")
         glueing_col_pairs = [pair.split("+") for pair in glueing_pairs]
@@ -216,8 +209,9 @@ def get_results(
         # evaluate for various n-best
         for n in n_best:
             eval_stats = evaluation_wrapper(evaluator, eval_type="nel", cols=NEL_COLUMNS, n_best=n)
+            eval_suffix = suffix + f"-@{n}" if suffix else f"@{n}"
             fieldnames, rows_n_best = assemble_tsv_output(
-                submission, eval_stats, regimes=["fuzzy"], only_aggregated=True, suffix=f"best@{n}",
+                submission, eval_stats, regimes=["fuzzy"], only_aggregated=True, suffix=eval_suffix,
             )
             rows += rows_n_best
 
@@ -236,6 +230,13 @@ def get_results(
             only_aggregated=True,
             suffix=f"union@lit-meto",
         )
+
+    if suffix:
+        suffix = "_" + suffix
+
+    f_sub = pathlib.Path(f_pred)
+    f_tsv = str(pathlib.Path(outdir) / f_sub.name.replace(".tsv", f"_{task}{suffix}.tsv"))
+    f_json = str(pathlib.Path(outdir) / f_sub.name.replace(".tsv", f"_{task}{suffix}.json"))
 
     with open(f_tsv, "w") as csvfile:
         writer = csv.DictWriter(csvfile, delimiter="\t", fieldnames=fieldnames)

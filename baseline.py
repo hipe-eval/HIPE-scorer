@@ -140,7 +140,6 @@ def write_predictions(fname, pred, dev):
     with open(fname, "w") as csvfile:
         writer = csv.DictWriter(csvfile, delimiter="\t", fieldnames=header)
         writer.writeheader()
-
         # get segmentation structure from dev set
         for i_doc, doc in enumerate(dev):
             writer.writerow({"TOKEN": "# document_id"})
@@ -152,6 +151,8 @@ def write_predictions(fname, pred, dev):
                     writer.writerow(pred[i_doc][i_tok].get_values())
 
                 tok_pos_start += len(sent)
+            # add empty line after each document according to gold standard
+            writer.writerow({"TOKEN": ""})
 
 
 def pipeline(f_train, f_pred, f_dev, cols, eval):

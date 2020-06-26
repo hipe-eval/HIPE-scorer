@@ -2,10 +2,11 @@
 # coding: utf-8
 
 import csv
+import re
 from collections import namedtuple
 import logging
 
-Entity = namedtuple("Entity", "e_type start_offset end_offset")
+Entity = namedtuple("Entity", "e_type start_offset end_offset span_text")
 
 
 class TokAnnotation:
@@ -19,7 +20,7 @@ class TokAnnotation:
 
         # columns are set as class variables
         for k, v in properties.items():
-            if k.upper() != "TOKEN":
+            if k.upper() not in ("TOKEN", "LEVENSHTEIN",):
                 try:
                     v = v.upper()
                 except AttributeError:
@@ -135,6 +136,13 @@ def read_conll_annotations(fname, glueing_col_pairs=None, structure_only=False):
                             new_col_2_label = f"{col_2_iob}-{col_1_label}.{col_2_label}"
                             row[col_2] = new_col_2_label
 
+                try:
+                    # parse Levenshtein distance from MISC column if possible
+                    row["LEVENSHTEIN"] = float(re.search(r"LED(\d+(\.\d+)?)", row["MISC"]).group(1))
+
+                except (AttributeError, KeyError):
+                    row["LEVENSHTEIN"] = None
+
                 # add final annotation
                 tok_annot = TokAnnotation(row)
                 sent_annotations.append(tok_annot)
@@ -145,6 +153,30 @@ def read_conll_annotations(fname, glueing_col_pairs=None, structure_only=False):
         annotations.append(doc_annotations)
 
     return annotations
+
+
+def filter_entities_by_noise(true: list, pred: list, noise_level: tuple) -> tuple:
+
+    """
+    Filter to keep non-entity-tokens without LEVENSHTEIN distance and
+    entity-tokens that fall into particular range only
+
+    """
+
+    noise_lower, noise_upper = noise_level
+
+    filtered_true = []
+    filtered_pred = []
+
+    for tok_true, tok_pred in zip(true, pred):
+        if tok_true.LEVENSHTEIN is None or noise_lower <= tok_true.LEVENSHTEIN < noise_upper:
+
+            filtered_true.append(tok_true)
+            filtered_pred.append(tok_pred)
+
+    assert len(filtered_true) == len(filtered_pred)
+
+    return filtered_true, filtered_pred
 
 
 def column_selector(doc, attribute):
@@ -166,6 +198,7 @@ def collect_named_entities(tokens: [TokAnnotation], cols: list):
     start_offset = None
     end_offset = None
     ent_type = None
+    span_text = ""
 
     for offset, token in enumerate(tokens):
 
@@ -174,7 +207,9 @@ def collect_named_entities(tokens: [TokAnnotation], cols: list):
         if token_tag == "O":
             if ent_type is not None and start_offset is not None:
                 end_offset = offset - 1
-                named_entities.append(Entity(ent_type, start_offset, end_offset))
+
+                named_entities.append(Entity(ent_type, start_offset, end_offset, span_text))
+
                 start_offset = None
                 end_offset = None
                 ent_type = None
@@ -182,20 +217,26 @@ def collect_named_entities(tokens: [TokAnnotation], cols: list):
         elif ent_type is None:
             ent_type = token_tag[2:]
             start_offset = offset
+            span_text = ""
 
         elif ent_type != token_tag[2:] or (ent_type == token_tag[2:] and token_tag[:1] == "B"):
 
             end_offset = offset - 1
-            named_entities.append(Entity(ent_type, start_offset, end_offset))
+            named_entities.append(Entity(ent_type, start_offset, end_offset, span_text))
 
             # start of a new entity
             ent_type = token_tag[2:]
             start_offset = offset
             end_offset = None
+            span_text = ""
+
+        span_text += token.TOKEN
 
     # catches an entity that goes up until the last token
-    if ent_type and start_offset and end_offset is None:
-        named_entities.append(Entity(ent_type, start_offset, len(tokens) - 1))
+    if ent_type and start_offset is not None and end_offset is None:
+        # TODO: entities at the end of the last segment in a doc
+        # have been ignored due the wrong expression "start_offset" instead of "start_offset is not None"
+        named_entities.append(Entity(ent_type, start_offset, len(tokens) - 1, span_text))
 
     # align shape of NE and link objects as the latter allows alternative annotations
     named_entities = [[ne] for ne in named_entities]
@@ -221,6 +262,7 @@ def collect_link_objects(tokens, cols, n_best=1):
     start_offset = None
     end_offset = None
     ent_type = None
+    span_text = ""
 
     if len(cols) > 1 and n_best > 1:
         msg = (
@@ -238,7 +280,7 @@ def collect_link_objects(tokens, cols, n_best=1):
             # end of a nel object
             if ent_type is not None and start_offset is not None:
                 end_offset = offset - 1
-                links.append(Entity(ent_type, start_offset, end_offset))
+                links.append(Entity(ent_type, start_offset, end_offset, span_text))
                 start_offset = None
                 end_offset = None
                 ent_type = None
@@ -247,20 +289,24 @@ def collect_link_objects(tokens, cols, n_best=1):
         elif ent_type is None:
             ent_type = token_tag
             start_offset = offset
+            span_text = ""
 
         # start of a new nel object without a gap
         elif ent_type != token_tag:
             end_offset = offset - 1
-            links.append(Entity(ent_type, start_offset, end_offset))
+            links.append(Entity(ent_type, start_offset, end_offset, span_text))
 
             # start of a new entity
             ent_type = token_tag
             start_offset = offset
             end_offset = None
+            span_text = ""
+
+        span_text += token.TOKEN
 
     # catches an entity that goes up until the last token
-    if ent_type and start_offset and end_offset is None:
-        links.append(Entity(ent_type, start_offset, len(tokens) - 1))
+    if ent_type and start_offset is not None and end_offset is None:
+        links.append(Entity(ent_type, start_offset, len(tokens) - 1, span_text))
 
     # allow alternative annotations with the same on/offset as the primary one
     links_union = []
@@ -272,7 +318,7 @@ def collect_link_objects(tokens, cols, n_best=1):
 
             for col in cols:
                 token_tag = getattr(tokens[link.start_offset], col)
-                union.append(Entity(token_tag, link.start_offset, link.end_offset))
+                union.append(Entity(token_tag, link.start_offset, link.end_offset, link.span_text))
 
             links_union.append(union)
     else:
@@ -283,7 +329,7 @@ def collect_link_objects(tokens, cols, n_best=1):
             n_best_links = link.e_type.split("|")[:n_best]
 
             for tag in n_best_links:
-                union.append(Entity(tag, link.start_offset, link.end_offset))
+                union.append(Entity(tag, link.start_offset, link.end_offset, link.span_text))
 
             links_union.append(union)
 

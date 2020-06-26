@@ -15,6 +15,8 @@ import pathlib
 import json
 import sys
 
+import itertools
+
 
 FINE_COLUMNS = {"NE-FINE-LIT", "NE-FINE-METO", "NE-FINE-COMP", "NE-NESTED"}
 COARSE_COLUMNS = {"NE-COARSE-LIT", "NE-COARSE-METO"}
@@ -119,6 +121,13 @@ def parse_args():
         "--tagset", action="store", dest="f_tagset", help="file containing the valid tagset",
     )
 
+    parser.add_argument(
+        "--noise-level",
+        action="store",
+        dest="noise_level",
+        help="evaluate NEL or NERC also on particular noise levels according to normalized Levenshtein distance of their manual OCR transcript. Example: 0.0-0.1,0.1-1.0",
+    )
+
     return parser.parse_args()
 
 
@@ -146,13 +155,18 @@ def enforce_filename(fname):
     return submission, lang
 
 
-def evaluation_wrapper(evaluator, eval_type, cols, n_best=1, tags=None):
+def evaluation_wrapper(evaluator, eval_type, cols, n_best=1, noise_level=None, tags=None):
     eval_global = {}
     eval_per_tag = {}
 
     for col in cols:
         eval_global[col], eval_per_tag[col] = evaluator.evaluate(
-            col, eval_type=eval_type, tags=tags, merge_lines=True, n_best=n_best
+            col,
+            eval_type=eval_type,
+            tags=tags,
+            merge_lines=True,
+            n_best=n_best,
+            noise_level=noise_level,
         )
 
         # add aggregated stats across types as artificial tag
@@ -162,16 +176,17 @@ def evaluation_wrapper(evaluator, eval_type, cols, n_best=1, tags=None):
 
 
 def get_results(
-    f_ref,
-    f_pred,
-    task,
-    skip_check=False,
-    glueing_cols=None,
-    n_best=[1],
-    union=False,
-    outdir=".",
-    suffix="",
-    f_tagset=None,
+    f_ref: str,
+    f_pred: str,
+    task: str,
+    skip_check: bool = False,
+    glueing_cols: str = None,
+    n_best: list = [1],
+    union: bool = False,
+    outdir: str = ".",
+    suffix: str = "",
+    f_tagset: str = None,
+    noise_levels: list = [None],
 ):
 
     if not skip_check:
@@ -194,42 +209,49 @@ def get_results(
 
     evaluator = Evaluator(f_ref, f_pred, glueing_col_pairs)
 
-    if task == "nerc_fine":
-        eval_stats = evaluation_wrapper(evaluator, eval_type="nerc", cols=FINE_COLUMNS, tags=tagset)
-        fieldnames, rows = assemble_tsv_output(submission, eval_stats)
+    if task in ("nerc_fine", "nerc_coarse"):
+        columns = FINE_COLUMNS if task == "nerc_fine" else COARSE_COLUMNS
 
-    elif task == "nerc_coarse":
-        eval_stats = evaluation_wrapper(
-            evaluator, eval_type="nerc", cols=COARSE_COLUMNS, tags=tagset
-        )
-        fieldnames, rows = assemble_tsv_output(submission, eval_stats)
+        rows = []
+        for noise_level in noise_levels:
+            eval_stats = evaluation_wrapper(
+                evaluator, eval_type="nerc", cols=columns, tags=tagset, noise_level=noise_level,
+            )
+            eval_suffix = f"{suffix + '-' if suffix else ''}" + define_noise_label(noise_level)
 
-    elif task == "nel" and not union:
+            fieldnames, rows_temp = assemble_tsv_output(submission, eval_stats, suffix=eval_suffix)
+            rows += rows_temp
+
+    elif task == "nel":
+
         rows = []
         # evaluate for various n-best
-        for n in n_best:
-            eval_stats = evaluation_wrapper(evaluator, eval_type="nel", cols=NEL_COLUMNS, n_best=n)
-            eval_suffix = suffix + f"-@{n}" if suffix else f"@{n}"
-            fieldnames, rows_n_best = assemble_tsv_output(
+        for n, noise_level in itertools.product(n_best, noise_levels):
+
+            eval_suffix = (
+                f"{suffix + '-' if suffix else ''}" + f"@{n}-" + define_noise_label(noise_level)
+            )
+
+            if union:
+                # nest columns to ensure iterating in parallel on both columns
+                eval_stats = evaluation_wrapper(
+                    evaluator,
+                    eval_type="nel",
+                    cols=[NEL_COLUMNS],
+                    n_best=n,
+                    noise_level=noise_level,
+                )
+                eval_suffix = "union_lit_meto-" + eval_suffix
+
+            else:
+                eval_stats = evaluation_wrapper(
+                    evaluator, eval_type="nel", cols=NEL_COLUMNS, n_best=n, noise_level=noise_level,
+                )
+
+            fieldnames, rows_temp = assemble_tsv_output(
                 submission, eval_stats, regimes=["fuzzy"], only_aggregated=True, suffix=eval_suffix,
             )
-            rows += rows_n_best
-
-    elif task == "nel" and union:
-        eval_global, eval_per_tag = evaluator.evaluate(
-            NEL_COLUMNS, eval_type="nel", tags=None, merge_lines=True, n_best=1
-        )
-        # add aggregated stats across types as artificial tag
-        eval_per_tag["ALL"] = eval_global
-        eval_stats = {"|".join(NEL_COLUMNS): eval_global}
-
-        fieldnames, rows = assemble_tsv_output(
-            submission,
-            eval_stats,
-            regimes=["fuzzy"],
-            only_aggregated=True,
-            suffix=f"union@lit-meto",
-        )
+            rows += rows_temp
 
     if suffix:
         suffix = "_" + suffix
@@ -247,6 +269,14 @@ def get_results(
         json.dump(
             eval_stats, jsonfile, indent=4,
         )
+
+
+def define_noise_label(noise_level):
+    if noise_level:
+        noise_lower, noise_upper = noise_level
+        return f"LED-{noise_lower}-{noise_upper}"
+    else:
+        return "LED-ALL"
 
 
 def assemble_tsv_output(
@@ -361,6 +391,16 @@ def main():
     else:
         n_best = [int(n) for n in args.n_best.split(",")]
 
+    if args.noise_level:
+        noise_levels = [level.split("-") for level in args.noise_level.split(",")]
+        noise_levels = [tuple([float(lower), float(upper)]) for lower, upper in noise_levels]
+
+        # add case to evaluate on all entities regardless of noise
+        noise_levels = [None] + noise_levels
+
+    else:
+        noise_levels = [None]
+
     try:
         get_results(
             args.f_ref,
@@ -373,10 +413,11 @@ def main():
             args.outdir,
             args.suffix,
             args.f_tagset,
+            noise_levels,
         )
-    except AssertionError:
+    except AssertionError as e:
         # don't interrupt the pipeline
-        pass
+        print(e)
 
 
 ################################################################################

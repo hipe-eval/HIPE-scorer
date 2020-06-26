@@ -17,6 +17,7 @@ from ner_evaluation.utils import (
     collect_link_objects,
     get_all_tags,
     column_selector,
+    filter_entities_by_noise,
 )
 
 
@@ -161,7 +162,13 @@ class Evaluator:
         self.pred = docs_pred
 
     def evaluate(
-        self, columns: list, eval_type: str, tags: set = None, merge_lines=False, n_best=1
+        self,
+        columns: list,
+        eval_type: str,
+        tags: set = None,
+        merge_lines=False,
+        n_best=1,
+        noise_level=None,
     ):
         """Collect extensive statistics across labels and per entity type.
 
@@ -186,6 +193,11 @@ class Evaluator:
 
         logging.info(f"Evaluating column {columns} in system response file '{self.f_pred}'")
 
+        if noise_level:
+            logging.info(
+                f"Limit evaluation to noisy entities with a Levenshtein distance from {noise_level[0]} to {noise_level[1]}."
+            )
+
         tags = self.set_evaluation_tags(columns, tags, eval_type)
 
         # Create an accumulator to store overall results
@@ -207,13 +219,20 @@ class Evaluator:
             # Iterate segment-wise (i.e. sentences or lines)
             for y_true_seg, y_pred_seg in zip(y_true_doc, y_pred_doc):
 
+                if noise_level:
+                    y_true_seg, y_pred_seg = filter_entities_by_noise(
+                        y_true_seg, y_pred_seg, noise_level
+                    )
+
                 # Compute result for one segment
                 if eval_type == "nerc":
+
                     seg_results, seg_results_per_type = self.compute_metrics(
                         collect_named_entities(y_true_seg, columns),
                         collect_named_entities(y_pred_seg, columns),
                         tags,
                     )
+
                 elif eval_type == "nel":
                     seg_results, seg_results_per_type = self.compute_metrics(
                         collect_link_objects(y_true_seg, columns),

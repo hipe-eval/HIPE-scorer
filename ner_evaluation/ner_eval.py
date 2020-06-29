@@ -18,6 +18,7 @@ from ner_evaluation.utils import (
     get_all_tags,
     column_selector,
     filter_entities_by_noise,
+    filter_entities_by_date,
 )
 
 
@@ -166,9 +167,10 @@ class Evaluator:
         columns: list,
         eval_type: str,
         tags: set = None,
-        merge_lines=False,
-        n_best=1,
-        noise_level=None,
+        merge_lines: bool = False,
+        n_best: int = 1,
+        noise_level: tuple = None,
+        time_period: tuple = None,
     ):
         """Collect extensive statistics across labels and per entity type.
 
@@ -183,7 +185,9 @@ class Evaluator:
         :param set tags: limit evaluation to valid tag set.
         :param bool merge_lines: option to drop line segmentation to allow entity spans across lines.
         :param int n_best: number of alternative links that should be considered.
-        :return: Aggregated statistics across labels and per entity type .
+        :param tuple noise_level: lower and upper Levenshtein distance to limit evaluation to noisy entities.
+        :param tuple time_period: start and end date to limit evaluation to a particular period.
+        :return: Aggregated statistics across labels and per entity type.
         :rtype: Tuple(list, list)
 
         """
@@ -194,8 +198,16 @@ class Evaluator:
         logging.info(f"Evaluating column {columns} in system response file '{self.f_pred}'")
 
         if noise_level:
+            noise_lower, noise_upper = noise_level
+
             logging.info(
-                f"Limit evaluation to noisy entities with a Levenshtein distance from {noise_level[0]} to {noise_level[1]}."
+                f"Limit evaluation to noisy entities with a Levenshtein distance from {noise_lower} to {noise_upper}."
+            )
+
+        if time_period:
+            date_start, date_end = time_period
+            logging.info(
+                f"Limit evaluation to entities of the period between {date_start} and {date_end}."
             )
 
         tags = self.set_evaluation_tags(columns, tags, eval_type)
@@ -221,7 +233,12 @@ class Evaluator:
 
                 if noise_level:
                     y_true_seg, y_pred_seg = filter_entities_by_noise(
-                        y_true_seg, y_pred_seg, noise_level
+                        y_true_seg, y_pred_seg, noise_lower, noise_upper
+                    )
+
+                if time_period:
+                    y_true_seg, y_pred_seg = filter_entities_by_date(
+                        y_true_seg, y_pred_seg, date_start, date_end
                     )
 
                 # Compute result for one segment

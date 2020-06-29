@@ -6,6 +6,8 @@ import re
 from collections import namedtuple
 import logging
 
+from datetime import datetime
+
 Entity = namedtuple("Entity", "e_type start_offset end_offset span_text")
 
 
@@ -20,7 +22,7 @@ class TokAnnotation:
 
         # columns are set as class variables
         for k, v in properties.items():
-            if k.upper() not in ("TOKEN", "LEVENSHTEIN",):
+            if k.upper() not in ("TOKEN", "LEVENSHTEIN", "DATE"):
                 try:
                     v = v.upper()
                 except AttributeError:
@@ -95,6 +97,8 @@ def read_conll_annotations(fname, glueing_col_pairs=None, structure_only=False):
     sent_annotations = []
     doc_annotations = []
 
+    date = None
+
     with open(fname) as csvfile:
         csvreader = csv.DictReader(csvfile, delimiter="\t", quoting=csv.QUOTE_NONE, quotechar="")
         fieldnames = csvreader.fieldnames
@@ -116,6 +120,10 @@ def read_conll_annotations(fname, glueing_col_pairs=None, structure_only=False):
                     annotations.append(doc_annotations)
                     sent_annotations = []
                     doc_annotations = []
+
+                elif first_item.startswith("# date"):
+                    datestring = re.search(r"\d{4}-\d{2}-\d{2}", first_item).group(0)
+                    date = datetime.strptime(datestring, "%Y-%m-%d")
 
                 # other lines starting with # are dismissed
 
@@ -143,6 +151,8 @@ def read_conll_annotations(fname, glueing_col_pairs=None, structure_only=False):
                 except (AttributeError, KeyError):
                     row["LEVENSHTEIN"] = None
 
+                row["DATE"] = date
+
                 # add final annotation
                 tok_annot = TokAnnotation(row)
                 sent_annotations.append(tok_annot)
@@ -155,21 +165,42 @@ def read_conll_annotations(fname, glueing_col_pairs=None, structure_only=False):
     return annotations
 
 
-def filter_entities_by_noise(true: list, pred: list, noise_level: tuple) -> tuple:
+def filter_entities_by_noise(
+    true: list, pred: list, noise_lower: float, noise_upper: float
+) -> tuple:
 
     """
-    Filter to keep non-entity-tokens without LEVENSHTEIN distance and
-    entity-tokens that fall into particular range only
-
+    Filter to keep any tokens with a LEVENSHTEIN distance within particular range.
+    If not given, the tokens are kept as well.
     """
-
-    noise_lower, noise_upper = noise_level
 
     filtered_true = []
     filtered_pred = []
 
     for tok_true, tok_pred in zip(true, pred):
         if tok_true.LEVENSHTEIN is None or noise_lower <= tok_true.LEVENSHTEIN < noise_upper:
+
+            filtered_true.append(tok_true)
+            filtered_pred.append(tok_pred)
+
+    assert len(filtered_true) == len(filtered_pred)
+
+    return filtered_true, filtered_pred
+
+
+def filter_entities_by_date(
+    true: list, pred: list, date_start: datetime, date_end: datetime
+) -> tuple:
+
+    """
+    Filter to keep any tokens of a particular period of time
+    """
+
+    filtered_true = []
+    filtered_pred = []
+
+    for tok_true, tok_pred in zip(true, pred):
+        if date_start <= tok_true.DATE < date_end:
 
             filtered_true.append(tok_true)
             filtered_pred.append(tok_pred)

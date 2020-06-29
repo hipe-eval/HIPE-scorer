@@ -17,6 +17,8 @@ import sys
 
 import itertools
 
+from datetime import datetime
+
 
 FINE_COLUMNS = {"NE-FINE-LIT", "NE-FINE-METO", "NE-FINE-COMP", "NE-NESTED"}
 COARSE_COLUMNS = {"NE-COARSE-LIT", "NE-COARSE-METO"}
@@ -128,6 +130,13 @@ def parse_args():
         help="evaluate NEL or NERC also on particular noise levels according to normalized Levenshtein distance of their manual OCR transcript. Example: 0.0-0.1,0.1-1.0",
     )
 
+    parser.add_argument(
+        "--time-period",
+        action="store",
+        dest="time_period",
+        help="evaluate NEL or NERC also on particular time periods. Example: 1900-1950,1950-2000",
+    )
+
     return parser.parse_args()
 
 
@@ -155,7 +164,9 @@ def enforce_filename(fname):
     return submission, lang
 
 
-def evaluation_wrapper(evaluator, eval_type, cols, n_best=1, noise_level=None, tags=None):
+def evaluation_wrapper(
+    evaluator, cols, eval_type, n_best=1, noise_level=None, time_period=None, tags=None
+):
     eval_global = {}
     eval_per_tag = {}
 
@@ -163,10 +174,11 @@ def evaluation_wrapper(evaluator, eval_type, cols, n_best=1, noise_level=None, t
         eval_global[col], eval_per_tag[col] = evaluator.evaluate(
             col,
             eval_type=eval_type,
-            tags=tags,
             merge_lines=True,
             n_best=n_best,
             noise_level=noise_level,
+            time_period=time_period,
+            tags=tags,
         )
 
         # add aggregated stats across types as artificial tag
@@ -187,6 +199,7 @@ def get_results(
     suffix: str = "",
     f_tagset: str = None,
     noise_levels: list = [None],
+    time_periods: list = [None],
 ):
 
     if not skip_check:
@@ -213,11 +226,21 @@ def get_results(
         columns = FINE_COLUMNS if task == "nerc_fine" else COARSE_COLUMNS
 
         rows = []
-        for noise_level in noise_levels:
+        for noise_level, time_period in itertools.product(noise_levels, time_periods):
             eval_stats = evaluation_wrapper(
-                evaluator, eval_type="nerc", cols=columns, tags=tagset, noise_level=noise_level,
+                evaluator,
+                eval_type="nerc",
+                cols=columns,
+                tags=tagset,
+                noise_level=noise_level,
+                time_period=time_period,
             )
-            eval_suffix = f"{suffix + '-' if suffix else ''}" + define_noise_label(noise_level)
+            eval_suffix = (
+                f"{suffix + '-' if suffix else ''}"
+                + define_time_label(time_period)
+                + "-"
+                + define_noise_label(noise_level)
+            )
 
             fieldnames, rows_temp = assemble_tsv_output(submission, eval_stats, suffix=eval_suffix)
             rows += rows_temp
@@ -226,10 +249,14 @@ def get_results(
 
         rows = []
         # evaluate for various n-best
-        for n, noise_level in itertools.product(n_best, noise_levels):
+        for n, noise_level, time_period in itertools.product(n_best, noise_levels, time_periods):
 
             eval_suffix = (
-                f"{suffix + '-' if suffix else ''}" + f"@{n}-" + define_noise_label(noise_level)
+                f"{suffix + '-' if suffix else ''}"
+                + define_time_label(time_period)
+                + "-"
+                + define_noise_label(noise_level)
+                + f"-@{n}"
             )
 
             if union:
@@ -240,12 +267,18 @@ def get_results(
                     cols=[NEL_COLUMNS],
                     n_best=n,
                     noise_level=noise_level,
+                    time_period=time_period,
                 )
                 eval_suffix = "union_lit_meto-" + eval_suffix
 
             else:
                 eval_stats = evaluation_wrapper(
-                    evaluator, eval_type="nel", cols=NEL_COLUMNS, n_best=n, noise_level=noise_level,
+                    evaluator,
+                    eval_type="nel",
+                    cols=NEL_COLUMNS,
+                    n_best=n,
+                    noise_level=noise_level,
+                    time_period=time_period,
                 )
 
             fieldnames, rows_temp = assemble_tsv_output(
@@ -277,6 +310,21 @@ def define_noise_label(noise_level):
         return f"LED-{noise_lower}-{noise_upper}"
     else:
         return "LED-ALL"
+
+
+def define_time_label(time_period):
+    if time_period:
+        date_start, date_end = time_period
+
+        if all([True for date in [date_start, date_end] if date.day == 1 and date.month == 1]):
+            # shorten label if only a year was provided (no particular month or day)
+            date_start, date_end = date_start.strftime("%Y"), date_end.strftime("%Y")
+        else:
+            date_start, date_end = date_start.strftime("%Y"), date_end.strftime("%Y")
+
+        return f"TIME-{date_start}-{date_end}"
+    else:
+        return "TIME-ALL"
 
 
 def assemble_tsv_output(
@@ -401,6 +449,23 @@ def main():
     else:
         noise_levels = [None]
 
+    if args.time_period:
+        time_periods = [period.split("-") for period in args.time_period.split(",")]
+        try:
+            time_periods = [
+                (datetime.strptime(period[0], "%Y"), datetime.strptime(period[1], "%Y"))
+                for period in time_periods
+            ]
+        except ValueError:
+            time_periods = [
+                (datetime.strptime(period[0], "%Y/%m/%d"), datetime.strptime(period[1], "%Y/%m/%d"))
+                for period in time_periods
+            ]
+        # add case to evaluate on all entities regardless of period
+        time_periods = [None] + time_periods
+    else:
+        time_periods = [None]
+
     try:
         get_results(
             args.f_ref,
@@ -414,6 +479,7 @@ def main():
             args.suffix,
             args.f_tagset,
             noise_levels,
+            time_periods,
         )
     except AssertionError as e:
         # don't interrupt the pipeline

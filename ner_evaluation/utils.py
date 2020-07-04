@@ -178,7 +178,11 @@ def filter_entities_by_noise(
     filtered_pred = []
 
     for tok_true, tok_pred in zip(true, pred):
-        if tok_true.LEVENSHTEIN is None or noise_lower <= tok_true.LEVENSHTEIN < noise_upper:
+        if (
+            tok_true.LEVENSHTEIN is None
+            or noise_lower <= tok_true.LEVENSHTEIN < noise_upper
+            or noise_lower == tok_true.LEVENSHTEIN == noise_upper
+        ):
 
             filtered_true.append(tok_true)
             filtered_pred.append(tok_pred)

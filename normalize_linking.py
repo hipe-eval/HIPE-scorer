@@ -5,24 +5,23 @@
 Normalize entity linking by remapping linkgs according to an external file
 
 Usage:
-    lib/normalize_linking.py -i=<fpath> -o=<fpath> --norm-time [options]
-    lib/normalize_linking.py -i=<fpath> -o=<fpath> --map=<fpath> --norm-histo [options]
-    lib/normalize_linking.py -i=<fpath> -o=<fpath> --norm-time --map=<fpath> --norm-histo [options]
+    normalize_linking.py -i=<fpath> -o=<fpath> [--norm-time (--norm-histo --map=<fpath>) --union-meto-lit]
+    normalize_linking.py naval_fate -h | --help
 
 Options:
     -h --help               Show this screen.
     -i --in=<fpath>         File path to original system response.
     -o --out=<fpath>        File path to normalized system response.
-    -m --map=<fpath>        File path to link mapping.
-    --norm-time             Normalize NEL for time mentions.
+    -m --map=<fpath>        File path to link historical mapping resource.
+    --norm-time             Normalize NEL for time mentions by linking to NIL.
     --norm-histo            Normalize NEL for historical entities
-    --union-meto-lit        Unionize literal and metonymic columns (apply on both columns)
+    --union-meto-lit        Unionize literal and metonymic columns (apply on both columns).
 """
 
 import csv
+import itertools
 import pandas as pd
 from docopt import docopt
-import itertools
 
 
 def get_mappings(f_map):
@@ -80,21 +79,37 @@ def unionize_meto_lit(df: pd.DataFrame):
             return [""]
 
     try:
-        df["NEL-LIT"] = df["NEL-LIT"].str.split("|")
-        df["NEL-METO"] = df["NEL-METO"].str.split("|")
+        df["NEL-LIT-LIST"] = df["NEL-LIT"].str.split("|")
+        df["NEL-METO-LIST"] = df["NEL-METO"].str.split("|")
 
+        # unionize the literal and metonymic columns as ranked list
         df["NEL-LIT-UNION"] = (
-            df[["NEL-LIT", "NEL-METO"]].dropna().apply(lambda x: union(x[0], x[1]), axis=1)
+            df[["NEL-LIT-LIST", "NEL-METO-LIST"]]
+            .dropna()
+            .apply(lambda x: union(x[0], x[1]), axis=1)
         )
         df["NEL-METO-UNION"] = (
-            df[["NEL-METO", "NEL-LIT"]].dropna().apply(lambda x: union(x[0], x[1]), axis=1)
+            df[["NEL-METO-LIST", "NEL-LIT-LIST"]]
+            .dropna()
+            .apply(lambda x: union(x[0], x[1]), axis=1)
         )
+        df["NEL-LIT-UNION"] = df["NEL-LIT-UNION"].str.join("|")
+        df["NEL-METO-UNION"] = df["NEL-METO-UNION"].str.join("|")
 
-        df["NEL-LIT"] = df["NEL-LIT-UNION"].str.join("|")
-        df["NEL-METO"] = df["NEL-METO-UNION"].str.join("|")
+        # keep the original _ for non-annotations
+        # as there may be literal annotations lacking a metonymic sense
+        # may be vice-versa
+        df.loc[df["NEL-METO"] == "_", "NEL-METO-UNION"] = "_"
+        df.loc[df["NEL-METO"] == "-", "NEL-METO-UNION"] = "-"
+
+        df.loc[df["NEL-LIT"] == "_", "NEL-LIT-UNION"] = "_"
+        df.loc[df["NEL-LIT"] == "-", "NEL-LIT-UNION"] = "-"
+
+        df["NEL-LIT"] = df["NEL-LIT-UNION"]
+        df["NEL-METO"] = df["NEL-METO-UNION"]
 
         # remove intermediate results
-        df = df.drop(columns=["NEL-LIT-UNION", "NEL-METO-UNION"])
+        df = df.drop(columns=["NEL-LIT-UNION", "NEL-METO-UNION", "NEL-LIT-LIST", "NEL-METO-LIST"])
 
     except KeyError:
         pass

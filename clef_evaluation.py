@@ -4,9 +4,29 @@
 
 """
 Evaluate the systems for the HIPE Shared Task
+
+Usage:
+  clef_evaluation --pred=<fpath> --ref=<fpath> ( --task=nerc_coarse | --task=nerc_fine ) [options]
+  clef_evaluation --pred=<fpath> --ref=<fpath> --task=nel [--n_best=<kn>] [options]
+  clef_evaluation -h | --help
+
+
+Options:
+    -h --help             Show this screen.
+    -r --ref=<fpath>      Path to gold standard file in CONLL-U-style format.
+    -p --pred=<fpath>     Path to system prediction file in CONLL-U-style format.
+    -o --outdir=<dir>     Path to output directory.
+    -l --log=<fpath>      Path to log file.
+    -t --task=<task>      Type of evaluation task (nerc_fine, nerc_coarse, nel).
+    -n, --n_best=<kn>     Evaluate NEL at particular cutoff value(s) provided with a ranked list of entity links, separate with a comma if multiple cutoffs. Link lists use a pipe as separator [default: 1].
+    --noise-level         Evaluate NEL or NERC also on particular noise levels according to normalized Levenshtein distance of their manual OCR transcript. Example: 0.0-0.1,0.1-1.0",
+    --time-period         Evaluate NEL or NERC also on particular time periods. Example: 1900-1950,1950-2000
+    --glue=<str>          Provide two columns separated by a plus (+) whose label are glued together for the evaluation (e.g. COL1_LABEL.COL2_LABEL). When glueing more than one pair, separate by comma.
+    --skip_check          Skip check that ensures the prediction file is in line with submission requirements.
+    --tagset=<fpath>      Path to file containing the valid tagset.
+    --suffix=<str>        Suffix that is appended to output file names and evaluation keys.
 """
 
-from ner_evaluation.ner_eval import Evaluator
 
 import argparse
 import logging
@@ -20,6 +40,8 @@ from collections import defaultdict
 
 from datetime import datetime
 
+
+from ner_evaluation.ner_eval import Evaluator
 
 FINE_COLUMNS = ["NE-FINE-LIT", "NE-FINE-METO", "NE-FINE-COMP", "NE-NESTED"]
 COARSE_COLUMNS = ["NE-COARSE-LIT", "NE-COARSE-METO"]

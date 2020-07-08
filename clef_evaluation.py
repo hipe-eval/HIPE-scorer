@@ -6,29 +6,29 @@
 Evaluate the systems for the HIPE Shared Task
 
 Usage:
-  clef_evaluation --pred=<fpath> --ref=<fpath> ( --task=nerc_coarse | --task=nerc_fine ) [options]
-  clef_evaluation --pred=<fpath> --ref=<fpath> --task=nel [--n_best=<kn>] [options]
-  clef_evaluation -h | --help
+  clef_evaluation.py --pred=<fpath> --ref=<fpath> --task=nerc_coarse [options]
+  clef_evaluation.py --pred=<fpath> --ref=<fpath> --task=nerc_fine [options]
+  clef_evaluation.py --pred=<fpath> --ref=<fpath> --task=nel [--n_best=<n>] [options]
+  clef_evaluation.py -h | --help
 
 
 Options:
-    -h --help             Show this screen.
-    -r --ref=<fpath>      Path to gold standard file in CONLL-U-style format.
-    -p --pred=<fpath>     Path to system prediction file in CONLL-U-style format.
-    -o --outdir=<dir>     Path to output directory.
-    -l --log=<fpath>      Path to log file.
-    -t --task=<task>      Type of evaluation task (nerc_fine, nerc_coarse, nel).
-    -n, --n_best=<kn>     Evaluate NEL at particular cutoff value(s) provided with a ranked list of entity links, separate with a comma if multiple cutoffs. Link lists use a pipe as separator [default: 1].
-    --noise-level         Evaluate NEL or NERC also on particular noise levels according to normalized Levenshtein distance of their manual OCR transcript. Example: 0.0-0.1,0.1-1.0",
-    --time-period         Evaluate NEL or NERC also on particular time periods. Example: 1900-1950,1950-2000
-    --glue=<str>          Provide two columns separated by a plus (+) whose label are glued together for the evaluation (e.g. COL1_LABEL.COL2_LABEL). When glueing more than one pair, separate by comma.
-    --skip_check          Skip check that ensures the prediction file is in line with submission requirements.
-    --tagset=<fpath>      Path to file containing the valid tagset.
-    --suffix=<str>        Suffix that is appended to output file names and evaluation keys.
+    -h --help               Show this screen.
+    -t --task=<type>        Type of evaluation task (nerc_coarse, nerc_fine, nel).
+    -r --ref=<fpath>        Path to gold standard file in CONLL-U-style format.
+    -p --pred=<fpath>       Path to system prediction file in CONLL-U-style format.
+    -o --outdir=<dir>       Path to output directory [default: .].
+    -l --log=<fpath>        Path to log file.
+    -n, --n_best=<n>        Evaluate NEL at particular cutoff value(s) when provided with a ranked list of entity links. Example: 1,3,5 [default: 1].
+    --noise-level=<str>     Evaluate NEL or NERC also on particular noise levels (normalized Levenshtein distance of their manual OCR transcript). Example: 0.0-0.1,0.1-1.0,
+    --time-period=<str>     Evaluate NEL or NERC also on particular time periods. Example: 1900-1950,1950-2000.
+    --glue=<str>            Provide two columns separated by a plus (+) whose label are glued together for the evaluation (e.g. COL1_LABEL.COL2_LABEL). When glueing more than one pair, separate by comma.
+    --skip-check            Skip check that ensures that the files name is in line with submission requirements.
+    --tagset=<fpath>        Path to file containing the valid tagset of CLEF-HIPE.
+    --suffix=<str>          Suffix that is appended to output file names and evaluation keys.
 """
 
 
-import argparse
 import logging
 import csv
 import pathlib
@@ -39,6 +39,7 @@ import itertools
 from collections import defaultdict
 
 from datetime import datetime
+from docopt import docopt
 
 
 from ner_evaluation.ner_eval import Evaluator
@@ -46,112 +47,6 @@ from ner_evaluation.ner_eval import Evaluator
 FINE_COLUMNS = ["NE-FINE-LIT", "NE-FINE-METO", "NE-FINE-COMP", "NE-NESTED"]
 COARSE_COLUMNS = ["NE-COARSE-LIT", "NE-COARSE-METO"]
 NEL_COLUMNS = ["NEL-LIT", "NEL-METO"]
-
-
-def parse_args():
-    """Parse the arguments given with program call"""
-
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument(
-        "-r",
-        "--ref",
-        required=True,
-        action="store",
-        dest="f_ref",
-        help="path to gold standard file in CONLL-U-style format",
-    )
-
-    parser.add_argument(
-        "-p",
-        "--pred",
-        required=True,
-        action="store",
-        dest="f_pred",
-        help="path to system prediction file in CONLL-U-style format",
-    )
-
-    parser.add_argument(
-        "-l",
-        "--log",
-        action="store",
-        default="clef_evaluation.log",
-        dest="f_log",
-        help="name of log file",
-    )
-
-    parser.add_argument(
-        "-t",
-        "--task",
-        required=True,
-        action="store",
-        dest="task",
-        help="type of evaluation",
-        choices={"nerc_fine", "nerc_coarse", "nel"},
-    )
-
-    parser.add_argument(
-        "--glueing_cols",
-        required=False,
-        action="store",
-        dest="glueing_cols",
-        help="provide two columns separated by a plus (+) whose label are glued together for the evaluation (e.g. COL1_LABEL.COL2_LABEL). \
-        When glueing more than one pair, separate by comma",
-    )
-
-    parser.add_argument(
-        "-n",
-        "--n_best",
-        required=False,
-        action="store",
-        dest="n_best",
-        help="evaluate at particular cutoff value(s) for an ordered list of entity links, separate with a comma if multiple cutoffs. Link lists use a pipe as separator.",
-    )
-
-    parser.add_argument(
-        "-s",
-        "--skip_check",
-        required=False,
-        action="store_true",
-        dest="skip_check",
-        help="skip check that ensures the prediction file is in line with submission requirements",
-    )
-
-    parser.add_argument(
-        "-o",
-        "--outdir",
-        action="store",
-        default=".",
-        dest="outdir",
-        help="name of output directory",
-    )
-    parser.add_argument(
-        "--suffix",
-        action="store",
-        default="",
-        dest="suffix",
-        help="Suffix to append at output file names",
-    )
-
-    parser.add_argument(
-        "--tagset", action="store", dest="f_tagset", help="file containing the valid tagset",
-    )
-
-    parser.add_argument(
-        "--noise-level",
-        action="store",
-        dest="noise_level",
-        help="evaluate NEL or NERC also on particular noise levels according to normalized Levenshtein distance of their manual OCR transcript. Example: 0.0-0.1,0.1-1.0",
-    )
-
-    parser.add_argument(
-        "--time-period",
-        action="store",
-        dest="time_period",
-        help="evaluate NEL or NERC also on particular time periods. Example: 1900-1950,1950-2000",
-    )
-
-    return parser.parse_args()
 
 
 def enforce_filename(fname: str):
@@ -416,19 +311,24 @@ def assemble_tsv_output(
     return fieldnames, rows
 
 
-def check_validity_of_arguments(args):
-    if args.task != "nel" and (args.n_best):
-        msg = "The provided arguments are not valid. Alternative annotations are only allowed for the NEL evaluation."
-        logging.error(msg)
-        raise AssertionError(msg)
+def main(args):
 
-
-def main():
-    args = parse_args()
+    f_ref = args["--ref"]
+    f_pred = args["--pred"]
+    outdir = args["--outdir"]
+    f_log = args["--log"]
+    task = args["--task"]
+    n_best = args["--n_best"]
+    noise_level = args["--noise-level"]
+    time_period = args["--time-period"]
+    glueing_cols = args["--glue"]
+    skip_check = args["--skip-check"]
+    f_tagset = args["--tagset"]
+    suffix = args["--suffix"]
 
     # log to file
     logging.basicConfig(
-        filename=args.f_log,
+        filename=f_log,
         filemode="w",
         level=logging.DEBUG,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -439,19 +339,13 @@ def main():
     handler.setLevel(logging.ERROR)
     logging.getLogger().addHandler(handler)
 
-    try:
-        check_validity_of_arguments(args)
-    except Exception as e:
-        print(e)
-        sys.exit(1)
-
-    if args.n_best:
-        n_best = [int(n) for n in args.n_best.split(",")]
+    if n_best:
+        n_best = [int(n) for n in n_best.split(",")]
     else:
         n_best = [1]
 
-    if args.noise_level:
-        noise_levels = [level.split("-") for level in args.noise_level.split(",")]
+    if noise_level:
+        noise_levels = [level.split("-") for level in noise_level.split(",")]
         noise_levels = [tuple([float(lower), float(upper)]) for lower, upper in noise_levels]
 
         # add case to evaluate on all entities regardless of noise
@@ -460,8 +354,8 @@ def main():
     else:
         noise_levels = [None]
 
-    if args.time_period:
-        time_periods = [period.split("-") for period in args.time_period.split(",")]
+    if time_period:
+        time_periods = [period.split("-") for period in time_period.split(",")]
         try:
             time_periods = [
                 (datetime.strptime(period[0], "%Y"), datetime.strptime(period[1], "%Y"))
@@ -479,15 +373,15 @@ def main():
 
     try:
         get_results(
-            args.f_ref,
-            args.f_pred,
-            args.task,
-            args.skip_check,
-            args.glueing_cols,
+            f_ref,
+            f_pred,
+            task,
+            skip_check,
+            glueing_cols,
             n_best,
-            args.outdir,
-            args.suffix,
-            args.f_tagset,
+            outdir,
+            suffix,
+            f_tagset,
             noise_levels,
             time_periods,
         )
@@ -498,4 +392,12 @@ def main():
 
 ################################################################################
 if __name__ == "__main__":
-    main()
+    args = docopt(__doc__)
+
+    tasks = ("nerc_coarse", "nerc_fine", "nel")
+    if args["--task"] not in tasks:
+        msg = "\nPlease restrict to one of the available evaluation tasks: " + ", ".join(tasks)
+        print(msg)
+        sys.exit(1)
+
+    main(args)

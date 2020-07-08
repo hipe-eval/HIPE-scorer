@@ -6,7 +6,7 @@ Normalize entity linking by remapping linkgs according to an external file
 
 Usage:
     normalize_linking.py -i=<fpath> -o=<fpath> [--norm-time (--norm-histo --map=<fpath>) --union-meto-lit]
-    normalize_linking.py naval_fate -h | --help
+    normalize_linking.py -h | --help
 
 Options:
     -h --help               Show this screen.

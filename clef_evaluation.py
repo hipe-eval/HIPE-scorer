@@ -3,12 +3,32 @@
 
 
 """
-Script to produce the evaluation for the HIPE Shared Task
+Evaluate the systems for the HIPE Shared Task
+
+Usage:
+  clef_evaluation.py --pred=<fpath> --ref=<fpath> --task=nerc_coarse [options]
+  clef_evaluation.py --pred=<fpath> --ref=<fpath> --task=nerc_fine [options]
+  clef_evaluation.py --pred=<fpath> --ref=<fpath> --task=nel [--n_best=<n>] [options]
+  clef_evaluation.py -h | --help
+
+
+Options:
+    -h --help               Show this screen.
+    -t --task=<type>        Type of evaluation task (nerc_coarse, nerc_fine, nel).
+    -r --ref=<fpath>        Path to gold standard file in CONLL-U-style format.
+    -p --pred=<fpath>       Path to system prediction file in CONLL-U-style format.
+    -o --outdir=<dir>       Path to output directory [default: .].
+    -l --log=<fpath>        Path to log file.
+    -n, --n_best=<n>        Evaluate NEL at particular cutoff value(s) when provided with a ranked list of entity links. Example: 1,3,5 [default: 1].
+    --noise-level=<str>     Evaluate NEL or NERC also on particular noise levels (normalized Levenshtein distance of their manual OCR transcript). Example: 0.0-0.1,0.1-1.0,
+    --time-period=<str>     Evaluate NEL or NERC also on particular time periods. Example: 1900-1950,1950-2000.
+    --glue=<str>            Provide two columns separated by a plus (+) whose label are glued together for the evaluation (e.g. COL1_LABEL.COL2_LABEL). When glueing more than one pair, separate by comma.
+    --skip-check            Skip check that ensures that the files name is in line with submission requirements.
+    --tagset=<fpath>        Path to file containing the valid tagset of CLEF-HIPE.
+    --suffix=<str>          Suffix that is appended to output file names and evaluation keys.
 """
 
-from ner_evaluation.ner_eval import Evaluator
 
-import argparse
 import logging
 import csv
 import pathlib
@@ -16,131 +36,20 @@ import json
 import sys
 
 import itertools
+from collections import defaultdict
 
 from datetime import datetime
+from docopt import docopt
 
 
-FINE_COLUMNS = {"NE-FINE-LIT", "NE-FINE-METO", "NE-FINE-COMP", "NE-NESTED"}
-COARSE_COLUMNS = {"NE-COARSE-LIT", "NE-COARSE-METO"}
+from ner_evaluation.ner_eval import Evaluator
+
+FINE_COLUMNS = ["NE-FINE-LIT", "NE-FINE-METO", "NE-FINE-COMP", "NE-NESTED"]
+COARSE_COLUMNS = ["NE-COARSE-LIT", "NE-COARSE-METO"]
 NEL_COLUMNS = ["NEL-LIT", "NEL-METO"]
 
 
-def parse_args():
-    """Parse the arguments given with program call"""
-
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument(
-        "-r",
-        "--ref",
-        required=True,
-        action="store",
-        dest="f_ref",
-        help="path to gold standard file in CONLL-U-style format",
-    )
-
-    parser.add_argument(
-        "-p",
-        "--pred",
-        required=True,
-        action="store",
-        dest="f_pred",
-        help="path to system prediction file in CONLL-U-style format",
-    )
-
-    parser.add_argument(
-        "-l",
-        "--log",
-        action="store",
-        default="clef_evaluation.log",
-        dest="f_log",
-        help="name of log file",
-    )
-
-    parser.add_argument(
-        "-t",
-        "--task",
-        required=True,
-        action="store",
-        dest="task",
-        help="type of evaluation",
-        choices={"nerc_fine", "nerc_coarse", "nel"},
-    )
-
-    parser.add_argument(
-        "--glueing_cols",
-        required=False,
-        action="store",
-        dest="glueing_cols",
-        help="provide two columns separated by a plus (+) whose label are glued together for the evaluation (e.g. COL1_LABEL.COL2_LABEL). \
-        When glueing more than one pair, separate by comma",
-    )
-
-    parser.add_argument(
-        "-n",
-        "--n_best",
-        required=False,
-        action="store",
-        dest="n_best",
-        help="evaluate at particular cutoff value(s) for an ordered list of entity links, separate with a comma if multiple cutoffs. Link lists use a pipe as separator.",
-    )
-
-    parser.add_argument(
-        "-u",
-        "--union",
-        required=False,
-        action="store_true",
-        dest="union",
-        help="consider the union of the metonymic and literal annotation for the evaluation of NEL",
-    )
-
-    parser.add_argument(
-        "-s",
-        "--skip_check",
-        required=False,
-        action="store_true",
-        dest="skip_check",
-        help="skip check that ensures the prediction file is in line with submission requirements",
-    )
-
-    parser.add_argument(
-        "-o",
-        "--outdir",
-        action="store",
-        default=".",
-        dest="outdir",
-        help="name of output directory",
-    )
-    parser.add_argument(
-        "--suffix",
-        action="store",
-        default="",
-        dest="suffix",
-        help="Suffix to append at output file names",
-    )
-
-    parser.add_argument(
-        "--tagset", action="store", dest="f_tagset", help="file containing the valid tagset",
-    )
-
-    parser.add_argument(
-        "--noise-level",
-        action="store",
-        dest="noise_level",
-        help="evaluate NEL or NERC also on particular noise levels according to normalized Levenshtein distance of their manual OCR transcript. Example: 0.0-0.1,0.1-1.0",
-    )
-
-    parser.add_argument(
-        "--time-period",
-        action="store",
-        dest="time_period",
-        help="evaluate NEL or NERC also on particular time periods. Example: 1900-1950,1950-2000",
-    )
-
-    return parser.parse_args()
-
-
-def enforce_filename(fname):
+def enforce_filename(fname: str):
 
     try:
         f_obj = pathlib.Path(fname.lower())
@@ -165,13 +74,21 @@ def enforce_filename(fname):
 
 
 def evaluation_wrapper(
-    evaluator, cols, eval_type, n_best=1, noise_level=None, time_period=None, tags=None
+    evaluator,
+    cols: list,
+    eval_type: str,
+    n_best: int = 1,
+    noise_levels: list = [None],
+    time_periods: list = [None],
+    tags: set = None,
 ):
-    eval_global = {}
-    eval_per_tag = {}
+    def recursive_defaultdict():
+        return defaultdict(recursive_defaultdict)
 
-    for col in cols:
-        eval_global[col], eval_per_tag[col] = evaluator.evaluate(
+    results = recursive_defaultdict()
+
+    for col, noise_level, time_period in itertools.product(cols, noise_levels, time_periods):
+        eval_global, eval_per_tag = evaluator.evaluate(
             col,
             eval_type=eval_type,
             merge_lines=True,
@@ -181,10 +98,14 @@ def evaluation_wrapper(
             tags=tags,
         )
 
-        # add aggregated stats across types as artificial tag
-        eval_per_tag[col]["ALL"] = eval_global[col]
+        time_period = define_time_label(time_period)
+        noise_level = define_noise_label(noise_level)
 
-    return eval_per_tag
+        # add aggregated stats across types as artificial tag
+        results[col][time_period][noise_level] = eval_per_tag
+        results[col][time_period][noise_level]["ALL"] = eval_global
+
+    return results
 
 
 def get_results(
@@ -194,7 +115,6 @@ def get_results(
     skip_check: bool = False,
     glueing_cols: str = None,
     n_best: list = [1],
-    union: bool = False,
     outdir: str = ".",
     suffix: str = "",
     f_tagset: str = None,
@@ -225,65 +145,40 @@ def get_results(
     if task in ("nerc_fine", "nerc_coarse"):
         columns = FINE_COLUMNS if task == "nerc_fine" else COARSE_COLUMNS
 
-        rows = []
-        for noise_level, time_period in itertools.product(noise_levels, time_periods):
-            eval_stats = evaluation_wrapper(
-                evaluator,
-                eval_type="nerc",
-                cols=columns,
-                tags=tagset,
-                noise_level=noise_level,
-                time_period=time_period,
-            )
-            eval_suffix = (
-                f"{suffix + '-' if suffix else ''}"
-                + define_time_label(time_period)
-                + "-"
-                + define_noise_label(noise_level)
-            )
+        eval_stats = evaluation_wrapper(
+            evaluator,
+            eval_type="nerc",
+            cols=columns,
+            tags=tagset,
+            noise_levels=noise_levels,
+            time_periods=time_periods,
+        )
 
-            fieldnames, rows_temp = assemble_tsv_output(submission, eval_stats, suffix=eval_suffix)
-            rows += rows_temp
+        fieldnames, rows = assemble_tsv_output(submission, eval_stats, suffix=suffix)
 
     elif task == "nel":
-
         rows = []
-        # evaluate for various n-best
-        for n, noise_level, time_period in itertools.product(n_best, noise_levels, time_periods):
+        eval_stats = {}
 
-            eval_suffix = (
-                f"{suffix + '-' if suffix else ''}"
-                + define_time_label(time_period)
-                + "-"
-                + define_noise_label(noise_level)
-                + f"-@{n}"
+        for n in n_best:
+            eval_stats[n] = evaluation_wrapper(
+                evaluator,
+                eval_type="nel",
+                cols=NEL_COLUMNS,
+                n_best=n,
+                noise_levels=noise_levels,
+                time_periods=time_periods,
             )
-
-            if union:
-                # nest columns to ensure iterating in parallel on both columns
-                eval_stats = evaluation_wrapper(
-                    evaluator,
-                    eval_type="nel",
-                    cols=[NEL_COLUMNS],
-                    n_best=n,
-                    noise_level=noise_level,
-                    time_period=time_period,
-                )
-                eval_suffix = "union_lit_meto-" + eval_suffix
-
-            else:
-                eval_stats = evaluation_wrapper(
-                    evaluator,
-                    eval_type="nel",
-                    cols=NEL_COLUMNS,
-                    n_best=n,
-                    noise_level=noise_level,
-                    time_period=time_period,
-                )
 
             fieldnames, rows_temp = assemble_tsv_output(
-                submission, eval_stats, regimes=["fuzzy"], only_aggregated=True, suffix=eval_suffix,
+                submission,
+                eval_stats[n],
+                n_best=n,
+                regimes=["fuzzy"],
+                only_aggregated=True,
+                suffix=suffix,
             )
+
             rows += rows_temp
 
     if suffix:
@@ -293,11 +188,13 @@ def get_results(
     f_tsv = str(pathlib.Path(outdir) / f_sub.name.replace(".tsv", f"_{task}{suffix}.tsv"))
     f_json = str(pathlib.Path(outdir) / f_sub.name.replace(".tsv", f"_{task}{suffix}.json"))
 
+    # write condesed results to tsv
     with open(f_tsv, "w") as csvfile:
         writer = csv.DictWriter(csvfile, delimiter="\t", fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(rows)
 
+    # write detailed results to json
     with open(f_json, "w") as jsonfile:
         json.dump(
             eval_stats, jsonfile, indent=4,
@@ -328,7 +225,7 @@ def define_time_label(time_period):
 
 
 def assemble_tsv_output(
-    submission, eval_stats, regimes=["fuzzy", "strict"], only_aggregated=False, suffix=""
+    submission, eval_stats, n_best=1, regimes=["fuzzy", "strict"], only_aggregated=False, suffix="",
 ):
 
     metrics = ("P", "R", "F1")
@@ -352,72 +249,86 @@ def assemble_tsv_output(
 
     rows = []
 
-    if suffix:
-        suffix = "-" + suffix
+    # dirty lookup of unknown keys to avoid for-loops
+    col = next(iter(eval_stats))
+    time_periods = list(iter(eval_stats[col]))
+    noise_levels = list(iter(eval_stats[col][time_periods[0]]))
 
-    for col in sorted(eval_stats):
-        for aggr in aggregations:
-            for regime in regimes:
+    for col, time_period, noise_level, aggr, regime in itertools.product(
+        sorted(eval_stats), time_periods, noise_levels, aggregations, regimes
+    ):
 
-                eval_regime = f"{col}-{aggr}-{regime}{suffix}"
-                # mapping terminology fuzzy->type
-                regime = "ent_type" if regime == "fuzzy" else regime
+        n_best_suffix = f"-@{n_best}" if "NEL" in col else ""
+        eval_regime = (
+            f"{col}-{aggr}-{regime}-"
+            + f"{suffix + '-' if suffix else ''}"
+            + time_period
+            + "-"
+            + noise_level
+            + n_best_suffix
+        )
 
-                # collect metrics
-                for tag in sorted(eval_stats[col]):
+        # mapping terminology fuzzy->type
+        regime = "ent_type" if regime == "fuzzy" else regime
 
-                    # collect only aggregated metrics
-                    if only_aggregated and tag != "ALL":
-                        continue
+        eval_handle = eval_stats[col][time_period][noise_level]
 
-                    results = {}
-                    results["System"] = submission
-                    results["Evaluation"] = eval_regime
-                    results["Label"] = tag
-                    for metric in metrics:
-                        mapped_metric = f"{metric}_{aggr}"
-                        results[metric] = eval_stats[col][tag][regime][mapped_metric]
+        # collect metrics
+        for tag in sorted(eval_handle):
 
-                    # add TP/FP/FN for micro analysis
-                    if aggr == "micro":
-                        for fig in figures:
-                            results[fig] = eval_stats[col][tag][regime][fig]
+            # collect only aggregated metrics
+            if only_aggregated and tag != "ALL":
+                continue
 
-                    if "macro" in aggr:
-                        for metric in metrics:
-                            mapped_metric = f"{metric}_{aggr}_std"
-                            results[metric + "_std"] = eval_stats[col][tag][regime][mapped_metric]
+            results = {}
+            results["System"] = submission
+            results["Evaluation"] = eval_regime
+            results["Label"] = tag
 
-                    for metric, fig in results.items():
-                        try:
-                            results[metric] = round(fig, 3)
-                        except TypeError:
-                            # some values are empty
-                            pass
+            for metric in metrics:
+                mapped_metric = f"{metric}_{aggr}"
+                results[metric] = eval_handle[tag][regime][mapped_metric]
 
-                    rows.append(results)
+            # add TP/FP/FN for micro analysis
+            if aggr == "micro":
+                for fig in figures:
+                    results[fig] = eval_handle[tag][regime][fig]
+
+            if "macro" in aggr:
+                for metric in metrics:
+                    mapped_metric = f"{metric}_{aggr}_std"
+                    results[metric + "_std"] = eval_handle[tag][regime][mapped_metric]
+
+            for key, val in results.items():
+                try:
+                    results[key] = round(val, 3)
+                except TypeError:
+                    # some values are empty
+                    pass
+
+            rows.append(results)
 
     return fieldnames, rows
 
 
-def check_validity_of_arguments(args):
-    if args.task != "nel" and (args.union or args.n_best):
-        msg = "The provided arguments are not valid. Alternative annotations are only allowed for the NEL evaluation."
-        logging.error(msg)
-        raise AssertionError(msg)
+def main(args):
 
-    if args.union and args.n_best:
-        msg = "The provided arguments are not valid. Restrict to a single evaluation schema for NEL, either a ranked n-best list or the union of the metonymic and literal column."
-        logging.error(msg)
-        raise AssertionError(msg)
-
-
-def main():
-    args = parse_args()
+    f_ref = args["--ref"]
+    f_pred = args["--pred"]
+    outdir = args["--outdir"]
+    f_log = args["--log"]
+    task = args["--task"]
+    n_best = args["--n_best"]
+    noise_level = args["--noise-level"]
+    time_period = args["--time-period"]
+    glueing_cols = args["--glue"]
+    skip_check = args["--skip-check"]
+    f_tagset = args["--tagset"]
+    suffix = args["--suffix"]
 
     # log to file
     logging.basicConfig(
-        filename=args.f_log,
+        filename=f_log,
         filemode="w",
         level=logging.DEBUG,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -428,19 +339,13 @@ def main():
     handler.setLevel(logging.ERROR)
     logging.getLogger().addHandler(handler)
 
-    try:
-        check_validity_of_arguments(args)
-    except Exception as e:
-        print(e)
-        sys.exit(1)
-
-    if not args.n_best:
-        n_best = [1]
+    if n_best:
+        n_best = [int(n) for n in n_best.split(",")]
     else:
-        n_best = [int(n) for n in args.n_best.split(",")]
+        n_best = [1]
 
-    if args.noise_level:
-        noise_levels = [level.split("-") for level in args.noise_level.split(",")]
+    if noise_level:
+        noise_levels = [level.split("-") for level in noise_level.split(",")]
         noise_levels = [tuple([float(lower), float(upper)]) for lower, upper in noise_levels]
 
         # add case to evaluate on all entities regardless of noise
@@ -449,8 +354,8 @@ def main():
     else:
         noise_levels = [None]
 
-    if args.time_period:
-        time_periods = [period.split("-") for period in args.time_period.split(",")]
+    if time_period:
+        time_periods = [period.split("-") for period in time_period.split(",")]
         try:
             time_periods = [
                 (datetime.strptime(period[0], "%Y"), datetime.strptime(period[1], "%Y"))
@@ -468,16 +373,15 @@ def main():
 
     try:
         get_results(
-            args.f_ref,
-            args.f_pred,
-            args.task,
-            args.skip_check,
-            args.glueing_cols,
+            f_ref,
+            f_pred,
+            task,
+            skip_check,
+            glueing_cols,
             n_best,
-            args.union,
-            args.outdir,
-            args.suffix,
-            args.f_tagset,
+            outdir,
+            suffix,
+            f_tagset,
             noise_levels,
             time_periods,
         )
@@ -488,5 +392,12 @@ def main():
 
 ################################################################################
 if __name__ == "__main__":
-    main()
-    # "data/HIPE-data-v01-sample-de.tsv", "data/HIPE-data-v01-sample-de_pred.tsv"
+    args = docopt(__doc__)
+
+    tasks = ("nerc_coarse", "nerc_fine", "nel")
+    if args["--task"] not in tasks:
+        msg = "\nPlease restrict to one of the available evaluation tasks: " + ", ".join(tasks)
+        print(msg)
+        sys.exit(1)
+
+    main(args)

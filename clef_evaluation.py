@@ -181,8 +181,7 @@ def get_results(
 
             rows += rows_temp
 
-    if suffix:
-        suffix = "_" + suffix
+    suffix = "_" + suffix if suffix else ""
 
     f_sub = pathlib.Path(f_pred)
     f_tsv = str(pathlib.Path(outdir) / f_sub.name.replace(".tsv", f"_{task}{suffix}.tsv"))

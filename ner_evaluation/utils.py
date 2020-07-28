@@ -269,8 +269,8 @@ def collect_named_entities(tokens: [TokAnnotation], cols: list):
 
     # catches an entity that goes up until the last token
     if ent_type and start_offset is not None and end_offset is None:
-        # TODO: entities at the end of the last segment in a doc
-        # have been ignored due the wrong expression "start_offset" instead of "start_offset is not None"
+        # including entities stretching from the first (start_offset = 0) to the last token in a segment
+        # requires an explicit "start_offset is not None" as "start_offset = 0" evaluates mistakenly to False
         named_entities.append(Entity(ent_type, start_offset, len(tokens) - 1, span_text))
 
     # align shape of NE and link objects as the latter allows alternative annotations

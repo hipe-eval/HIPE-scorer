@@ -16,7 +16,7 @@ class TestEvaluationResults(unittest.TestCase):
     def setUp(self):
         self.n_docs = 2
         self.n_segments = 21
-        self.n_tokens = 132
+        self.n_tokens = 129
         self.evaluator = Evaluator(
             "ner_evaluation/tests/data/unittest-true_bundle3_de_1.tsv",
             "ner_evaluation/tests/data/unittest-pred_bundle3_de_1.tsv",

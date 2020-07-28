@@ -159,6 +159,3 @@ der	I-pers	O	I-pers.ind	O	I-comp.function	O	NIL	_	_
 VI	I-pers	O	I-pers.ind	O	I-comp.function	O	NIL	_	NoSpaceAfter
 .	I-pers	O	I-pers.ind	O	I-comp.function	O	NIL	_	_
 Division	I-pers	O	I-pers.ind	O	I-comp.function	O	NIL	_	NoSpaceAfter
-,	O	O	O	O	O	O	_	_	_
-hat	O	O	O	O	O	O	_	_	_
-in	O	O	O	O	O	O	_	_	EndOfLine|NoSpaceAfter

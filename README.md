@@ -1,3 +1,5 @@
+__This is an updated version that improves the EL evaluation__
+
 # CLEF-HIPE-2020-scorer
 
 CLEF-HIPE-2020-scorer is a python module for evaluating Named Entity Recognition and Classification (NER) models and Entity Linking (EL) as defined in the [CLEF-HIPE-2020 Shared Task](https://impresso.github.io/CLEF-HIPE-2020//). The format of the data is similar to [CoNLL-U](https://universaldependencies.org/format.html), yet tokens may have more than one named entity annotations. Different annotations are recorded in different columns, which are evaluated separately (for more detail on the input format, refer to the [HIPE participation guidelines](https://zenodo.org/record/3604238)). 
@@ -29,7 +31,7 @@ The Slot Error Rate (SER) is dropped for the shared task evaluation.
 
 #### Entity Linking
 
-The evaluation for EL works similarly to NERC. The link of an entity is interpreted as a label. As there is no IOB-tagging, a consecutive row of identical links is considered as a single entity. In terms of boundaries, EL is evaluated according to the fuzzy scenario only. Thus, to get counted as correct, the system response needs only one overlapping link label with the gold standard. Literal and metonymic linking are evaluated separately.
+The evaluation for EL works similarly to NERC. The link of an entity is interpreted as a label. ~~As there is no IOB-tagging, a consecutive row of identical links is considered as a single entity.~~ This version uses the named entities boundaries to determine the EL boundaries, however, it is still possible to use the original evaluation. In terms of boundaries, EL is evaluated according to the fuzzy scenario only. Thus, to get counted as correct, the system response needs only one overlapping link label with the gold standard. Literal and metonymic linking are evaluated separately.
 
 EL strict regime considers only the system's top link prediction (NIL or QID), while the fuzzy regime expands system predictions with a set of historically related entity QIDs. For example, “Germany” QID is complemented with the QID of the more specific “Confederation of the Rhine” entity and both are considered as valid answers. The resource allowing for such historical normalization was compiled by the task organizers for the entities of the test data sets, and is released as part of the HIPE scorer. For the fuzzy regime, participants were invited to submit more than one link, and F-measure is additionally computed with cutoffs @3 and @5.
 

@@ -171,6 +171,7 @@ class Evaluator:
         n_best: int = 1,
         noise_level: tuple = None,
         time_period: tuple = None,
+        additional_columns: list = None,
     ):
         """Collect extensive statistics across labels and per entity type.
 
@@ -187,6 +188,7 @@ class Evaluator:
         :param int n_best: number of alternative links that should be considered.
         :param tuple noise_level: lower and upper Levenshtein distance to limit evaluation to noisy entities.
         :param tuple time_period: start and end date to limit evaluation to a particular period.
+        :param list additional_columns: name of column that contains the additional annotations (nel).
         :return: Aggregated statistics across labels and per entity type.
         :rtype: Tuple(list, list)
 
@@ -194,6 +196,9 @@ class Evaluator:
 
         if isinstance(columns, str):
             columns = [columns]
+
+        if isinstance(additional_columns, str):
+            additional_columns = [additional_columns]
 
         logging.info(f"Evaluating column {columns} in system response file '{self.f_pred}'")
 
@@ -252,8 +257,8 @@ class Evaluator:
 
                 elif eval_type == "nel":
                     seg_results, seg_results_per_type = self.compute_metrics(
-                        collect_link_objects(y_true_seg, columns),
-                        collect_link_objects(y_pred_seg, columns, n_best),
+                        collect_link_objects(y_true_seg, columns, additional_columns),
+                        collect_link_objects(y_pred_seg, columns, additional_columns, n_best),
                         tags,
                     )
 

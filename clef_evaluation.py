@@ -192,7 +192,7 @@ def get_results(
                 submission,
                 eval_stats[n],
                 n_best=n,
-                regimes=["fuzzy"],
+                #regimes=["fuzzy"],
                 only_aggregated=True,
                 suffix=suffix,
             )
@@ -347,9 +347,9 @@ def main(args):
     # log to file
     logging.basicConfig(
         filename=f_log,
-        filemode="w",
-        level=logging.DEBUG,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        filemode="a",
+        level=logging.WARN,
+        format=f"%(asctime)s - %(levelname)s - {f_pred} - %(message)s",
     )
 
     # log errors also to console

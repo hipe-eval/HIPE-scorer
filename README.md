@@ -9,7 +9,7 @@ The NERC evaluation goes beyond a token-based schema and considers entities as t
 
 After exploring the tool I noticed that parsing EL links based on consecutive lines was creating some issues in the evaluation, specially when multiple consecutive entities were assigned a NIL. See this [Github issue](https://github.com/impresso/CLEF-HIPE-2020-scorer/issues/13). Thus, I decided to update the scorer to use boundaries defined by the NER annotation found in the gold standard and in the predicted file.
 
-The description of the tool continues to be the same, except for the EL part, which has been modified. The new/changed portions of text are in italics, while the old ones are striked.
+The description of the tool continues to be the same, except for the EL part, which has been modified. The old portions of text are strikedthrough.
 
 ### Metrics
 

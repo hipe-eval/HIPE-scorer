@@ -257,7 +257,7 @@ class Evaluator:
 
                 elif eval_type == "nel":
                     seg_results, seg_results_per_type = self.compute_metrics(
-                        collect_link_objects(y_true_seg, columns, additional_columns),
+                        collect_link_objects(y_true_seg, columns, additional_columns, gs=True),
                         collect_link_objects(y_pred_seg, columns, additional_columns, n_best),
                         tags,
                     )

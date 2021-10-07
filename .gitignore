@@ -105,3 +105,6 @@ venv.bak/
 
 #Pycharm
 .idea/
+
+#Other testing files
+*.sh

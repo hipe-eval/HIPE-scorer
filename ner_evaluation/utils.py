@@ -279,14 +279,25 @@ def collect_named_entities(tokens: [TokAnnotation], cols: list):
     return named_entities
 
 
-def collect_link_objects(tokens, link_cols, ner_cols, n_best=1):
+def collect_link_objects(tokens, link_cols, ner_cols, n_best=1, gs=False):
+    """
+    Collect a list of all link objects, storing the link itself and the onset
+    and the offset in a named-tuple.
+
+    :param [TokAnnotation] tokens: a list of tokens of the type TokAnnotation.
+    :param list link_cols: name of column from which the links annotation is taken.
+    :param list ner_cols: name of column from which the ner annotation is taken.
+    :param int n_best: the number of alternative links that should be considered (pipe-separated cell).
+    :param gs: indicate whether the columns come from the gold standard or not.
+    :return: a nested list of Entity named-tuples that may comprise link alternatives
+    """
     if ner_cols is None:
         return collect_link_objects_original(tokens, link_cols, n_best=n_best)
     else:
-        return collect_link_objects_ner(tokens, link_cols, ner_cols, n_best=n_best)
+        return collect_link_objects_ner(tokens, link_cols, ner_cols, n_best=n_best, gs=gs)
 
 
-def collect_link_objects_ner(tokens, link_cols, ner_cols, n_best=1):
+def collect_link_objects_ner(tokens, link_cols, ner_cols, n_best=1, gs=False):
     """
     Collect a list of all link objects, storing the link itself and the onset
     and the offset in a named-tuple.
@@ -298,6 +309,7 @@ def collect_link_objects_ner(tokens, link_cols, ner_cols, n_best=1):
     :param list link_cols: name of column from which the links annotation is taken.
     :param list ner_cols: name of column from which the ner annotation is taken.
     :param int n_best: the number of alternative links that should be considered (pipe-separated cell).
+    :param gs: indicate whether the columns come from the gold standard or not.
     :return: a nested list of Entity named-tuples that may comprise link alternatives
     """
 
@@ -343,9 +355,23 @@ def collect_link_objects_ner(tokens, link_cols, ner_cols, n_best=1):
 
         #Start of a new nel object but still within the same ner object
         elif ner_type == token_ner_tag[2:] and token_ner_tag[:1] == "I" and ent_type != token_link_tag:
-            msg = f"A named entity has different links within its tokens: {ent_type} != {token_link_tag}"
-            logging.error(msg)
-            raise AssertionError(msg)
+            if gs:
+                msg = f"A named entity in the GOLD STANDARD has different links within its tokens: {ent_type} != {token_link_tag}. Keeping the first link."
+            else:
+                msg = f"A named entity has different links within its tokens: {ent_type} != {token_link_tag}. Splitting into multiple predictions."
+                logging.warning(msg)
+
+                end_offset = offset - 1
+                links.append(Entity(ent_type, start_offset, end_offset, span_text))
+
+                # start of a new entity
+                ent_type = token_link_tag
+                ner_type = token_ner_tag[2:]
+                start_offset = offset
+                end_offset = None
+                span_text = ""
+
+            logging.warning(msg)
 
         elif ner_type != token_ner_tag[2:] or (ner_type == token_ner_tag[2:] and token_ner_tag[:1] == "B"):
             end_offset = offset - 1

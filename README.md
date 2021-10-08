@@ -40,7 +40,9 @@ The evaluation for EL works similarly to NERC. The link of an entity is interpre
 
 ~~EL strict regime considers only the system's top link prediction (NIL or QID), while the fuzzy regime expands system predictions with a set of historically related entity QIDs. For example, “Germany” QID is complemented with the QID of the more specific “Confederation of the Rhine” entity and both are considered as valid answers. The resource allowing for such historical normalization was compiled by the task organizers for the entities of the test data sets, and is released as part of the HIPE scorer. For the fuzzy regime, participants were invited to submit more than one link, and F-measure is additionally computed with cutoffs @3 and @5.~~
 
-Without any particular specification, the EL evaluation will be done @1, meaning that only the system's top link prediction (NIL, QID or _) will be used. With higher cutoffs, like @3 or @5 (any number is possible), a larger number of candidates can be taken into account, by specifiying multiples candidates separated by the character `|`. 
+Without any particular specification, the EL evaluation will be done @1, meaning that only the system's top link prediction (NIL, QID or _) will be used. With higher cutoffs, like @3 or @5 (any number is possible), a larger number of candidates can be taken into account, by specifiying multiples candidates separated by the character `|`.
+
+You can have a fuzzier regime if you run the `normalize_linking.py` script which will expand certain links. For example, “Germany” QID is complemented with the QID of the more specific “Confederation of the Rhine” entity and both are considered as valid answers. The resource allowing for such historical normalization was compiled by the task organizers for the entities of the test data sets, and is released as part of the HIPE scorer.
 
 ## Scorer
 

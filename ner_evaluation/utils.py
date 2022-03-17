@@ -279,7 +279,146 @@ def collect_named_entities(tokens: [TokAnnotation], cols: list):
     return named_entities
 
 
-def collect_link_objects(tokens, cols, n_best=1):
+def collect_link_objects(tokens, link_cols, ner_cols, n_best=1, gs=False):
+    """
+    Collect a list of all link objects, storing the link itself and the onset
+    and the offset in a named-tuple.
+
+    :param [TokAnnotation] tokens: a list of tokens of the type TokAnnotation.
+    :param list link_cols: name of column from which the links annotation is taken.
+    :param list ner_cols: name of column from which the ner annotation is taken.
+    :param int n_best: the number of alternative links that should be considered (pipe-separated cell).
+    :param gs: indicate whether the columns come from the gold standard or not.
+    :return: a nested list of Entity named-tuples that may comprise link alternatives
+    """
+    if ner_cols is None:
+        return collect_link_objects_original(tokens, link_cols, n_best=n_best)
+    else:
+        return collect_link_objects_ner(tokens, link_cols, ner_cols, n_best=n_best, gs=gs)
+
+
+def collect_link_objects_ner(tokens, link_cols, ner_cols, n_best=1, gs=False):
+    """
+    Collect a list of all link objects, storing the link itself and the onset
+    and the offset in a named-tuple.
+
+    Link alternatives may be provided either in separate columns using the
+    cols attribute or as pipe-separated values within the the cell.
+
+    :param [TokAnnotation] tokens: a list of tokens of the type TokAnnotation.
+    :param list link_cols: name of column from which the links annotation is taken.
+    :param list ner_cols: name of column from which the ner annotation is taken.
+    :param int n_best: the number of alternative links that should be considered (pipe-separated cell).
+    :param gs: indicate whether the columns come from the gold standard or not.
+    :return: a nested list of Entity named-tuples that may comprise link alternatives
+    """
+
+    links = []
+    start_offset = None
+    end_offset = None
+    ent_type = None
+    ner_type = None
+    span_text = ""
+
+    if len(link_cols) > 1 and n_best > 1:
+        msg = (
+                "NEL evaluation is undefined when both a alternative column is provided as well as a n-best list within the cell."
+                + "Please restrict to a single schema comprising the alternatives."
+        )
+        logging.error(msg)
+        raise AssertionError(msg)
+
+    for offset, token in enumerate(tokens):
+
+        token_link_tag = getattr(token, link_cols[0])
+        token_ner_tag = getattr(token, ner_cols[0])
+
+        if token_ner_tag == "O":
+            if ent_type is not None and start_offset is not None:
+                end_offset = offset - 1
+                links.append(Entity(ent_type, start_offset, end_offset, span_text))
+                start_offset = None
+                end_offset = None
+                ent_type = None
+                ner_type = None
+            if token_link_tag not in ("_", "-"):
+                links.append(Entity(token_link_tag, offset, offset, token.TOKEN))
+
+
+
+        # start of a new ner object
+        elif ner_type is None:
+            ent_type = token_link_tag
+            ner_type = token_ner_tag[2:]
+            start_offset = offset
+            span_text = ""
+
+        #Start of a new nel object but still within the same ner object
+        elif ner_type == token_ner_tag[2:] and token_ner_tag[:1] == "I" and ent_type != token_link_tag:
+            if gs:
+                msg = f"A named entity in the GOLD STANDARD has different links within its tokens: {ent_type} != {token_link_tag}. Keeping the first link."
+            else:
+                msg = f"A named entity has different links within its tokens: {ent_type} != {token_link_tag}. Splitting into multiple predictions."
+                logging.warning(msg)
+
+                end_offset = offset - 1
+                links.append(Entity(ent_type, start_offset, end_offset, span_text))
+
+                # start of a new entity
+                ent_type = token_link_tag
+                ner_type = token_ner_tag[2:]
+                start_offset = offset
+                end_offset = None
+                span_text = ""
+
+            logging.warning(msg)
+
+        elif ner_type != token_ner_tag[2:] or (ner_type == token_ner_tag[2:] and token_ner_tag[:1] == "B"):
+            end_offset = offset - 1
+            links.append(Entity(ent_type, start_offset, end_offset, span_text))
+
+            # start of a new entity
+            ent_type = token_link_tag
+            ner_type = token_ner_tag[2:]
+            start_offset = offset
+            end_offset = None
+            span_text = ""
+
+        span_text += token.TOKEN
+
+    # catches an entity that goes up until the last token
+    if ent_type and start_offset is not None and end_offset is None:
+        links.append(Entity(ent_type, start_offset, len(tokens) - 1, span_text))
+
+    # allow alternative annotations with the same on/offset as the primary one
+    links_union = []
+
+    if len(link_cols) > 1:
+        # alternative annotations provided in separate columns
+        for link in links:
+            union = []
+
+            for col in link_cols:
+                token_link_tag = getattr(tokens[link.start_offset], col)
+                union.append(Entity(token_link_tag, link.start_offset, link.end_offset, link.span_text))
+
+            links_union.append(union)
+    else:
+        # standard NEL evaluation that considers a n_best links of a ranked list
+        # links are separated by pipes in a single cell.
+        for link in links:
+            union = []
+            n_best_links = link.e_type.split("|")[:n_best]
+
+            for tag in n_best_links:
+                union.append(Entity(tag, link.start_offset, link.end_offset, link.span_text))
+
+            links_union.append(union)
+
+    return links_union
+
+
+def collect_link_objects_original(tokens, cols, n_best=1):
     """
     Collect a list of all link objects, storing the link itself and the onset
     and the offset in a named-tuple.

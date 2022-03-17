@@ -19,6 +19,7 @@ Options:
     -p --pred=<fpath>       Path to system prediction file in CONLL-U-style format.
     -o --outdir=<dir>       Path to output directory [default: .].
     -l --log=<fpath>        Path to log file.
+    -g --original_nel       It splits the NEL boundaries using original CLEF algorithm.
     -n, --n_best=<n>        Evaluate NEL at particular cutoff value(s) when provided with a ranked list of entity links. Example: 1,3,5 [default: 1].
     --noise-level=<str>     Evaluate NEL or NERC also on particular noise levels (normalized Levenshtein distance of their manual OCR transcript). Example: 0.0-0.1,0.1-1.0,
     --time-period=<str>     Evaluate NEL or NERC also on particular time periods. Example: 1900-1950,1950-2000.
@@ -81,13 +82,24 @@ def evaluation_wrapper(
     noise_levels: list = [None],
     time_periods: list = [None],
     tags: set = None,
+    additional_cols: list = None,
 ):
     def recursive_defaultdict():
         return defaultdict(recursive_defaultdict)
 
+    if additional_cols is not None:
+        try:
+            assert len(cols) == len(additional_cols)
+        except AssertionError:
+            msg = f"Additional columns must have the same size that columns. Got {cols} and {additional_cols}."
+            logging.error(msg)
+            raise AssertionError(msg)
     results = recursive_defaultdict()
 
-    for col, noise_level, time_period in itertools.product(cols, noise_levels, time_periods):
+    for (col_id, col), noise_level, time_period in itertools.product(enumerate(cols), noise_levels, time_periods):
+        additional_col = None
+        if additional_cols is not None:
+            additional_col = additional_cols[col_id]
         eval_global, eval_per_tag = evaluator.evaluate(
             col,
             eval_type=eval_type,
@@ -96,6 +108,7 @@ def evaluation_wrapper(
             noise_level=noise_level,
             time_period=time_period,
             tags=tags,
+            additional_columns=additional_col
         )
 
         time_period = define_time_label(time_period)
@@ -120,6 +133,7 @@ def get_results(
     f_tagset: str = None,
     noise_levels: list = [None],
     time_periods: list = [None],
+    original_nel: bool = False,
 ):
 
     if not skip_check:
@@ -160,11 +174,15 @@ def get_results(
         rows = []
         eval_stats = {}
 
+        nel_additional_cols = COARSE_COLUMNS
+        if original_nel:
+            nel_additional_cols = None
         for n in n_best:
             eval_stats[n] = evaluation_wrapper(
                 evaluator,
                 eval_type="nel",
                 cols=NEL_COLUMNS,
+                additional_cols=nel_additional_cols,
                 n_best=n,
                 noise_levels=noise_levels,
                 time_periods=time_periods,
@@ -174,7 +192,7 @@ def get_results(
                 submission,
                 eval_stats[n],
                 n_best=n,
-                regimes=["fuzzy"],
+                #regimes=["fuzzy"],
                 only_aggregated=True,
                 suffix=suffix,
             )
@@ -317,6 +335,7 @@ def main(args):
     outdir = args["--outdir"]
     f_log = args["--log"]
     task = args["--task"]
+    original_nel = args["--original_nel"]
     n_best = args["--n_best"]
     noise_level = args["--noise-level"]
     time_period = args["--time-period"]
@@ -328,9 +347,9 @@ def main(args):
     # log to file
     logging.basicConfig(
         filename=f_log,
-        filemode="w",
-        level=logging.DEBUG,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        filemode="a",
+        level=logging.WARN,
+        format=f"%(asctime)s - %(levelname)s - {f_pred} - %(message)s",
     )
 
     # log errors also to console
@@ -383,6 +402,7 @@ def main(args):
             f_tagset,
             noise_levels,
             time_periods,
+            original_nel,
         )
     except AssertionError as e:
         # don't interrupt the pipeline

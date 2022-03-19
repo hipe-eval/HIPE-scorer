@@ -1,15 +1,10 @@
 
-# CLEF-HIPE-2020-scorer (EL parsing update)
+# HIPE-scorer 
 
-CLEF-HIPE-2020-scorer is a python module for evaluating Named Entity Recognition and Classification (NER) models and Entity Linking (EL) as defined in the [CLEF-HIPE-2020 Shared Task](https://impresso.github.io/CLEF-HIPE-2020//). The format of the data is similar to [CoNLL-U](https://universaldependencies.org/format.html), yet tokens may have more than one named entity annotations. Different annotations are recorded in different columns, which are evaluated separately (for more detail on the input format, refer to the [HIPE participation guidelines](https://zenodo.org/record/3604238)). 
+The HIPE-scorer is a python module for evaluating Named Entity Recognition and Classification (NER) models and Entity Linking (EL) as defined in the [CLEF-HIPE-2020](https://impresso.github.io/CLEF-HIPE-2020//) and [HIPE-2022](https://hipe-eval.github.io/HIPE-2022/) Shared Tasks. The format of the data is similar to [CoNLL-U](https://universaldependencies.org/format.html), yet tokens may have more than one named entity annotations. Different annotations are recorded in different columns, which are evaluated separately. For more detail on the input format, refer to the [CLEF-HIPE-2020](https://zenodo.org/record/3604238) and the [HIPE-2022](https://zenodo.org/record/6045662) participation guidelines. 
 
-The NERC evaluation goes beyond a token-based schema and considers entities as the unit of reference. An entity is defined as being of a particular type and having a span with a token onset and an offset. Following this definition, various NERC system outcomes may exist regarding correct entity types and boundaries when comparing the system response to the gold standard. The task of named entity evaluation is described in detail in a [blog post](http://www.davidsbatista.net/blog/2018/05/09/Named_Entity_Evaluation/) by [David Batista](https://github.com/davidsbatista). Our scorer builds on the code in the [original repository](https://github.com/davidsbatista/NER-Evaluation), which accompanied the blog post.
+The NERC evaluation goes beyond a token-based schema and considers entities as the unit of reference. An entity is defined as being of a particular type and having a span with a token onset and an offset. Following this definition, various NERC system outcomes may exist regarding correct entity types and boundaries when comparing the system response to the gold standard. 
 
-## EL parsing update
-
-After exploring the tool I noticed that parsing EL links based on consecutive lines was creating some issues in the evaluation, specially when multiple consecutive entities were assigned a NIL. See this [Github issue](https://github.com/impresso/CLEF-HIPE-2020-scorer/issues/13). Thus, I decided to update the scorer to use boundaries defined by the NER annotation found in the gold standard and in the predicted file.
-
-The description of the tool continues to be the same, except for the EL part, which has been modified. The old portions of text are strikedthrough.
 
 ### Metrics
 
@@ -32,17 +27,26 @@ Our definition of macro differs from the usual one, and macro measures are compu
 
 Note that in the strict scenario, predicting wrong boundaries leads to severe punishment of one false negative (entity present in the gold standard but not predicted by the system) and one false positive (predicted entity by the system but not present in the gold standard). Although this may be severe, we keep this metric in line with [CoNLL](https://www.clips.uantwerpen.be/conll2000/chunking/output.html) and refer to the fuzzy scenario if the boundaries of an entity are considered as less important.
 
-The Slot Error Rate (SER) is dropped for the shared task evaluation.
 
 #### Entity Linking
 
-The evaluation for EL works similarly to NERC. The link of an entity is interpreted as a label. ~~As there is no IOB-tagging, a consecutive row of identical links is considered as a single entity.~~ This version uses the named entities boundaries to determine the EL boundaries, however, it is still possible to use the original evaluation; use flag `--original_nel`. This makes the scorer to follow approaches used in other evaluators like Gerbil or NelEval, where the boundaries are defined by named entities. Furthermore, it prevents wrong evaluation on cosecutive entities linked to a NIL. ~~In terms of boundaries, EL is evaluated according to the fuzzy scenario only.~~ In terms of boundaries, EL is evaluated according to the fuzzy and strict scenarios. In the fuzzy scneario, to get counted as correct, the system response needs only one overlapping link label with the gold standard. In the strict one, an exact match between the the link and boundaries must be achieved to get counted as correct. Use the strict scenario specially when the EL system only disambiguates gold standard named entities (if the system works as it should, the fuzzy and strict values should be the same). Otherwise, use fuzzy to evaluate a system. Literal and metonymic linking are evaluated separately.
+EL evaluation is based on the same metrics as NERC and the link of an entity is interpreted as a label. However, the definition of strict and fuzzy regimes differs, according to what is relaxed (label or boundaries).
 
-~~EL strict regime considers only the system's top link prediction (NIL or QID), while the fuzzy regime expands system predictions with a set of historically related entity QIDs. For example, “Germany” QID is complemented with the QID of the more specific “Confederation of the Rhine” entity and both are considered as valid answers. The resource allowing for such historical normalization was compiled by the task organizers for the entities of the test data sets, and is released as part of the HIPE scorer. For the fuzzy regime, participants were invited to submit more than one link, and F-measure is additionally computed with cutoffs @3 and @5.~~
+In the context of the HIPE Shared Tasks, we are interested in the capacity of systems to provide the correct link rather than the correct boundaries (something already evaluated in NERC).
 
-Without any particular specification, the EL evaluation will be done @1, meaning that only the system's top link prediction (NIL, QID or _) will be used. With higher cutoffs, like @3 or @5 (any number is possible), a larger number of candidates can be taken into account, by specifiying multiples candidates separated by the character `|`.
+The scorer provides the following evaluation regimes:    
+1. **boundary-strict & label-strict**: the system response needs the correct link label on each token of the linked mention (an IOB mapping between NE mention and NE links is performed during evaluation and allows to check boundaries). This scenario is similar to what is done in GERBIL or NELEval. This scenario is **not used** during the HIPE shared tasks.
+2. **boundary-fuzzy & label-strict**: the system response needs only one overlapping link label with the gold standard and only the top link prediction (NIL or QID) is considered (cutoff @1). This scenario is used during the HIPE shared tasks.
+3. **boundary-fuzzy & label-fuzzy**: the system response needs only one overlapping link label with the gold standard and more than one link is considered. For this regime,  participants are invited to submit more than one link (multiple QIDs can be specified, separated by `|` - please refer to guidelines specified above), and F-measure is additionally computed with cutoffs @3 and @5 . Furthermore, system predictions can be expanded with a set of historically related entity QIDs (by running first `normalize_linking.py`). For example, “Germany” QID is complemented with the QID of the more specific “Confederation of the Rhine” entity and both are considered as valid answers. The resource allowing for such historical normalization was compiled by the task organizers for the entities of the test data sets, and is released as part of the HIPE scorer. This scenario is used during the HIPE shared tasks.
 
-You can have a fuzzier regime if you run the `normalize_linking.py` script which will expand certain links. For example, “Germany” QID is complemented with the QID of the more specific “Confederation of the Rhine” entity and both are considered as valid answers. The resource allowing for such historical normalization was compiled by the task organizers for the entities of the test data sets, and is released as part of the HIPE scorer.
+In every scenario, literal and metonymic linking are evaluated separately.
+
+:warning: **Important note - March 2022**
+- EL evaluation regime (1) was introduced with this [PR](https://github.com/hipe-eval/HIPE-scorer/pull/17) by Adrián [creat89](https://github.com/creat89) (many thanks!) to correct issue [#13](https://github.com/hipe-eval/HIPE-scorer/issues/13) of the non-differentiation by the scorer of consecutive entity with NIL links (given that originally non IOB mapping was done). However, in the context of the HIPE shared tasks, the scorer should allow fuzzy boundaries (scenarios 2 and 3), while having issue [#13](https://github.com/hipe-eval/HIPE-scorer/issues/13) corrected. We are working on this. Presently, the `--task=nel` evaluates according to regime (1).
+- EL evaluation regime (2) can be used by specifing `--task=nel --original_nel`. Presently this will consider consecutive NIL entities as one (will be fixed).
+- EL evaluation regime (3) can be used by specifing `--n_best=<n>` (see usage of `clef_evaluation.py`)
+
+For the 'EL-only' task where entity mentions are provided, regimes 1 and 2 will give the same results.
 
 ## Scorer
 
@@ -137,6 +141,9 @@ The script outputs three files: a file with the predictions of the baseline syst
 
 Please note that there is no script to produce the baseline for entity linking (EL).
 
-## Acknowledgments
-Our evaluation module is based on David Batista's [NER-Evaluation](https://github.com/davidsbatista/NER-Evaluation).
 
+## Release history and credits
+- **v2.0**, **upcoming**: pre-HIPE2022 release, based on [Adrián creat89](https://github.com/creat89])'s [PR](https://github.com/hipe-eval/HIPE-scorer/pull/17) and a few additional corrections.
+- **v1.1**, June 2020: post-HIPE-2020 evaluation release.
+- **v1.0**, June 2020: version of the scorer as used during the CLEF-HIPE-2020 evaluation period.
+- **v0.9**, Feb 2020,: first release of the HIPE scorer developed by Alex Flückiger, based on David Batista's [NER-Evaluation module](https://github.com/davidsbatista/NER-Evaluation) (see also his [blog post](http://www.davidsbatista.net/blog/2018/05/09/Named_Entity_Evaluation/) on the topic).

@@ -36,8 +36,8 @@ In the context of the HIPE Shared Tasks, we are interested in the capacity of sy
 
 The scorer provides the following evaluation regimes:    
 1. **boundary-strict & label-strict**: the system response needs the correct link label on each token of the linked mention (an IOB mapping between NE mention and NE links is performed during evaluation and allows to check boundaries). This scenario is similar to what is done in GERBIL or NELEval. This scenario is **not used** during the HIPE shared tasks.
-2. **boundary-fuzzy & label-strict**: the system response needs only one overlapping link label with the gold standard and only the top link prediction (NIL or QID) is considered (cutoff @1). This scenario is used during the HIPE shared tasks.
-3. **boundary-fuzzy & label-fuzzy**: the system response needs only one overlapping link label with the gold standard and more than one link is considered. For this regime,  participants are invited to submit more than one link (multiple QIDs can be specified, separated by `|` - please refer to guidelines specified above), and F-measure is additionally computed with cutoffs @3 and @5 . Furthermore, system predictions can be expanded with a set of historically related entity QIDs (by running first `normalize_linking.py`). For example, “Germany” QID is complemented with the QID of the more specific “Confederation of the Rhine” entity and both are considered as valid answers. The resource allowing for such historical normalization was compiled by the task organizers for the entities of the test data sets, and is released as part of the HIPE scorer. This scenario is used during the HIPE shared tasks.
+2. **boundary-fuzzy & label-strict**: at entity level, the system response needs only one entity token with a link label that overlaps with the gold standard entity link label to be counted as correct, and only the top link prediction (NIL or QID) is considered (cutoff @1). This scenario is used during the HIPE shared tasks.
+3. **boundary-fuzzy & label-fuzzy**:  at entity level, the system response needs only one entity token with a link label that overlaps with the gold standard entity link label to be counted as correct, and more than one link is considered. For this regime,  participants are invited to submit more than one link (multiple QIDs can be specified, separated by `|` - please refer to guidelines specified above), and F-measure is additionally computed with cutoffs @3 and @5 . Furthermore, system predictions can be expanded with a set of historically related entity QIDs (by running first `normalize_linking.py`). For example, “Germany” QID is complemented with the QID of the more specific “Confederation of the Rhine” entity and both are considered as valid answers. The resource allowing for such historical normalization was compiled by the task organizers for the entities of the test data sets, and is released as part of the HIPE scorer. This scenario is used during the HIPE shared tasks.
 
 In every scenario, literal and metonymic linking are evaluated separately.
 
@@ -47,6 +47,8 @@ In every scenario, literal and metonymic linking are evaluated separately.
 - EL evaluation regime (3) can be used by specifing `--n_best=<n>` (see usage of `clef_evaluation.py`)
 
 For the 'EL-only' task where entity mentions are provided, regimes 1 and 2 will give the same results.
+
+A new version will soon be published.
 
 ## Scorer
 

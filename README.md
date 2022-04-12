@@ -143,6 +143,12 @@ The script outputs three files: a file with the predictions of the baseline syst
 
 Please note that there is no script to produce the baseline for entity linking (EL).
 
+## Installation
+```
+$ python3 -mvenv venv
+$ source venv/bin/activate
+$ pip3 install -r requirements.txt
+```
 
 ## Release history and credits
 - **v2.0**, **upcoming**: pre-HIPE2022 release, based on [Adrián creat89](https://github.com/creat89])'s [PR](https://github.com/hipe-eval/HIPE-scorer/pull/17) and a few additional corrections.

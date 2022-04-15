@@ -12,7 +12,7 @@ import sklearn_crfsuite
 import argparse
 
 
-from ner_evaluation.utils import *
+from hipe_evaluation.utils import *
 from clef_evaluation import *
 
 

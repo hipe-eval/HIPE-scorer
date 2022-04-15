@@ -6,7 +6,7 @@
 Unit test to check the evaluation results for the HIPE Shared Task
 """
 
-from ner_evaluation.ner_eval import Evaluator
+from hipe_evaluation.ner_eval import Evaluator
 
 import unittest
 import json

@@ -43,7 +43,7 @@ from datetime import datetime
 from docopt import docopt
 
 
-from ner_evaluation.ner_eval import Evaluator
+from hipe_evaluation.ner_eval import Evaluator
 
 FINE_COLUMNS = ["NE-FINE-LIT", "NE-FINE-METO", "NE-FINE-COMP", "NE-NESTED"]
 COARSE_COLUMNS = ["NE-COARSE-LIT", "NE-COARSE-METO"]

@@ -11,7 +11,7 @@ from collections import defaultdict
 from copy import deepcopy
 import numpy as np
 
-from ner_evaluation.utils import (
+from hipe_evaluation.utils import (
     read_conll_annotations,
     collect_named_entities,
     collect_link_objects,

@@ -1,3 +1,4 @@
 docopt
 numpy
 pandas
+smart_open

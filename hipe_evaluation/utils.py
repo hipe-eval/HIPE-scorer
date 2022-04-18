@@ -5,7 +5,7 @@ import csv
 import re
 from collections import namedtuple
 import logging
-
+from smart_open import open
 from datetime import datetime
 
 Entity = namedtuple("Entity", "e_type start_offset end_offset span_text")

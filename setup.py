@@ -5,8 +5,8 @@ setup(
     version='2.0',
     packages=['hipe_evaluation'],
     url='',
-    license='',
-    author='siclemat',
+    license='MIT License',
+    author='Alex Flückiger',
     author_email='',
-    description=''
+    description='Scorer tool for HIPE evaluation campaigns 2020/2022'
 )

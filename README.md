@@ -148,6 +148,8 @@ Please note that there is no script to produce the baseline for entity linking (
 $ python3 -mvenv venv
 $ source venv/bin/activate
 $ pip3 install -r requirements.txt
+$ # for development
+$ pip3 install -e .
 ```
 
 ## Release history and credits

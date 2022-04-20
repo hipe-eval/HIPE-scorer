@@ -1,0 +1,161 @@
+TOKEN	NE-COARSE-LIT	NE-COARSE-METO	NE-FINE-LIT	NE-FINE-METO	NE-FINE-COMP	NE-NESTED	NEL-LIT	NEL-METO	MISC
+# language = de									
+# newspaper = NZZ									
+# date = 1918-11-08									
+# document_id = NZZ-1918-11-08-a-p0001									
+# segment_iiif_link = _									
+Im	O	O	O	O	O	O	_	_	EndOfLine|NoSpaceAfter
+# segment_iiif_link = _									
+Namen	O	O	O	O	O	O	_	_	_
+der	O	O	O	O	O	O	_	_	_
+serbischen	O	O	O	O	O	O	_	_	_
+Regierung	O	O	O	O	O	O	_	_	_
+nimmt	O	O	O	O	O	O	_	_	_
+Pa	B-pers	O	B-pers.ind	O	O	O	Q313843	_	NoSpaceAfter
+¬	I-pers	O	I-pers.ind	O	O	O	Q313843	_	EndOfLine|NoSpaceAfter
+# segment_iiif_link = _									
+sitsch	I-pers	O	I-pers.ind	O	O	O	Q313843	_	_
+zustimmend	O	O	O	O	O	O	_	_	_
+Kenntnis	O	O	O	O	O	O	_	_	_
+von	O	O	O	O	O	O	_	_	_
+der	O	O	O	O	O	O	_	_	_
+Erklä	O	O	O	O	O	O	_	_	NoSpaceAfter
+¬	O	O	O	O	O	O	_	_	EndOfLine|NoSpaceAfter
+# segment_iiif_link = _									
+rung	O	O	O	O	O	O	_	_	_
+der	O	O	O	O	O	O	_	_	_
+drei	O	O	O	O	O	O	_	_	_
+Mitglieder	O	O	O	O	O	O	_	_	_
+des	O	O	O	O	O	O	_	_	_
+Zagreber	O	O	O	O	O	O	_	_	EndOfLine|NoSpaceAfter
+fer	O	O	O	O	O	O	_	_	NoSpaceAfter
+¬	O	O	O	O	O	O	_	_	EndOfLine|NoSpaceAfter
+# segment_iiif_link = _									
+ner	O	O	O	O	O	O	_	_	_
+Dr	B-pers	O	B-pers.ind	O	B-comp.title	O	Q571638	_	NoSpaceAfter
+.	I-pers	O	I-pers.ind	O	I-comp.title	O	Q571638	_	_
+Anton	I-pers	O	I-pers.ind	O	B-comp.name	O	Q571638	_	_
+Trumbitsch	I-pers	O	I-pers.ind	O	I-comp.name	O	Q571638	_	NoSpaceAfter
+,	I-pers	O	I-pers.ind	O	O	O	Q571638	_	_
+Präsident	I-pers	O	I-pers.ind	O	B-comp.function	O	Q571638	_	_
+des	I-pers	O	I-pers.ind	O	I-comp.function	O	Q571638	_	EndOfLine|NoSpaceAfter
+# segment_iiif_link = _									
+jugoslawischen	I-pers	O	I-pers.ind	O	I-comp.function	O	Q571638	_	_
+Komitees	I-pers	O	I-pers.ind	O	I-comp.function	O	Q571638	_	_
+in	I-pers	O	I-pers.ind	O	I-comp.function	O	Q571638	_	_
+London	I-pers	O	I-pers.ind	O	I-comp.function	B-loc.adm.town	Q571638	_	_
+als	O	O	O	O	O	O	_	_	_
+offi	O	O	O	O	O	O	_	_	NoSpaceAfter
+¬	O	O	O	O	O	O	_	_	EndOfLine|NoSpaceAfter
+# segment_iiif_link = _									
+ziellen	O	O	O	O	O	O	_	_	_
+Vertreter	O	O	O	O	O	O	_	_	_
+des	O	O	O	O	O	O	_	_	_
+Zagreber	O	O	O	O	O	O	_	_	_
+Nationalrates	O	O	O	O	O	O	_	_	EndOfLine|NoSpaceAfter
+# segment_iiif_link = _									
+bei	O	O	O	O	O	O	_	_	_
+den	O	O	O	O	O	O	_	_	_
+alliierten	O	O	O	O	O	O	_	_	_
+Regierungen	O	O	O	O	O	O	_	_	_
+anzuerkennen	O	O	O	O	O	O	_	_	NoSpaceAfter
+,	O	O	O	O	O	O	_	_	EndOfLine|NoSpaceAfter
+# segment_iiif_link = _									
+bis	O	O	O	O	O	O	_	_	_
+ein	O	O	O	O	O	O	_	_	_
+gemeinsames	O	O	O	O	O	O	_	_	_
+Organ	O	O	O	O	O	O	_	_	_
+geschaffen	O	O	O	O	O	O	_	_	_
+ist	O	O	O	O	O	O	_	_	NoSpaceAfter
+,	O	O	O	O	O	O	_	_	_
+das	O	O	O	O	O	O	_	_	EndOfLine|NoSpaceAfter
+# segment_iiif_link = _									
+Serbien	B-loc	B-org	B-loc.adm.nat	B-org.adm	O	O	Q403	Q403	_
+und	O	O	O	O	O	O	_	_	_
+den	O	O	O	O	O	O	_	_	_
+neuen	O	O	O	O	O	O	_	_	_
+in	O	O	O	O	O	O	_	_	_
+Zagreb	B-loc	O	B-loc.adm.town	O	O	O	Q1435	_	_
+konstituierten	O	O	O	O	O	O	_	_	EndOfLine|NoSpaceAfter
+# segment_iiif_link = _									
+Staat	O	O	O	O	O	O	_	_	_
+repräsentieren	O	O	O	O	O	O	_	_	_
+sollte	O	O	O	O	O	O	_	_	NoSpaceAfter
+.	O	O	O	O	O	O	_	_	_
+Herr	B-pers	O	B-pers.ind	O	B-comp.title	O	Q313843	_	_
+Pasitsch	I-pers	O	I-pers.ind	O	B-comp.name	O	Q313843	_	_
+er	O	O	O	O	O	O	_	_	NoSpaceAfter
+¬	O	O	O	O	O	O	_	_	EndOfLine|NoSpaceAfter
+# segment_iiif_link = _									
+klärte	O	O	O	O	O	O	_	_	_
+seine	O	O	O	O	O	O	_	_	_
+Bereitwilligkeit	O	O	O	O	O	O	_	_	NoSpaceAfter
+,	O	O	O	O	O	O	_	_	_
+die	O	O	O	O	O	O	_	_	_
+verbündeten	O	O	O	O	O	O	_	_	EndOfLine|NoSpaceAfter
+# segment_iiif_link = _									
+Regierungen	O	O	O	O	O	O	_	_	_
+von	O	O	O	O	O	O	_	_	_
+diesen	O	O	O	O	O	O	_	_	_
+Wünschen	O	O	O	O	O	O	_	_	_
+offiziell	O	O	O	O	O	O	_	_	_
+in	O	O	O	O	O	O	_	_	EndOfLine|NoSpaceAfter
+# segment_iiif_link = _									
+Kenntnis	O	O	O	O	O	O	_	_	_
+zu	O	O	O	O	O	O	_	_	_
+setzen	O	O	O	O	O	O	_	_	_
+									
+									
+# language = de									
+# newspaper = NZZ									
+# date = 1898-11-17									
+# document_id = NZZ-1898-11-17-c-p0002									
+# segment_iiif_link = _									
+Kantone	O	O	O	O	O	O	_	_	NoSpaceAfter
+.	O	O	O	O	O	O	_	_	EndOfLine|NoSpaceAfter
+# segment_iiif_link = _									
+Zürich	B-loc	O	B-loc.adm.reg	O	O	O	Q72	_	NoSpaceAfter
+.	O	O	O	O	O	O	_	_	EndOfLine|NoSpaceAfter
+# segment_iiif_link = _									
+Auf	O	O	O	O	O	O	_	_	_
+Ersuchen	O	O	O	O	O	O	_	_	_
+machen	O	O	O	O	O	O	_	_	_
+wir	O	O	O	O	O	O	_	_	_
+nochmals	O	O	O	O	O	O	_	_	_
+darauf	O	O	O	O	O	O	_	_	_
+aufmerk	O	O	O	O	O	O	_	_	NoSpaceAfter
+¬	O	O	O	O	O	O	_	_	EndOfLine|NoSpaceAfter
+# segment_iiif_link = _									
+sam	O	O	O	O	O	O	_	_	NoSpaceAfter
+,	O	O	O	O	O	O	_	_	_
+daß	O	O	O	O	O	O	_	_	_
+die	O	O	O	O	O	O	_	_	_
+Versammlung	O	O	O	O	O	O	_	_	_
+der	O	O	O	O	O	O	_	_	_
+Offiziersgesell	B-org	O	B-org.ent	O	O	O	NIL	_	NoSpaceAfter
+¬	I-org	O	I-org.ent	O	O	O	NIL	_	EndOfLine|NoSpaceAfter
+# segment_iiif_link = _									
+schaft	I-org	O	I-org.ent	O	O	O	NIL	_	_
+des	I-org	O	I-org.ent	O	O	O	NIL	_	_
+Kantons	I-org	O	I-org.ent	O	O	B-loc.adm.reg	NIL	_	_
+Zürich	I-org	O	I-org.ent	O	O	I-loc.adm.reg	NIL	_	_
+dieses	O	O	O	O	O	O	_	_	_
+Jahr	O	O	O	O	O	O	_	_	_
+in	O	O	O	O	O	O	_	_	EndOfLine|NoSpaceAfter
+# segment_iiif_link = _									
+Winterthur	B-loc	O	B-loc.adm.town	O	O	O	Q9125	_	_
+nächsten	O	O	O	O	O	O	_	_	_
+Sonntag	O	O	O	O	O	O	_	_	_
+stattfindet	O	O	O	O	O	O	_	_	NoSpaceAfter
+.	O	O	O	O	O	O	_	_	_
+Herr	B-pers	O	B-pers.ind	O	B-comp.title	O	NIL	_	_
+Oberst	I-pers	O	I-pers.ind	O	B-comp.title	O	NIL	_	EndOfLine|NoSpaceAfter
+# segment_iiif_link = _									
+J	I-pers	O	I-pers.ind	O	B-comp.name	O	NIL	_	NoSpaceAfter
+.	I-pers	O	I-pers.ind	O	I-comp.name	O	NIL	_	_
+Isler	I-pers	O	I-pers.ind	O	I-comp.name	O	NIL	_	_
+Kreisinstruktor	I-pers	O	I-pers.ind	O	B-comp.function	O	NIL	_	_
+der	I-pers	O	I-pers.ind	O	I-comp.function	O	NIL	_	_
+VI	I-pers	O	I-pers.ind	O	I-comp.function	O	NIL	_	NoSpaceAfter
+.	I-pers	O	I-pers.ind	O	I-comp.function	O	NIL	_	_
+Division	I-pers	O	I-pers.ind	O	I-comp.function	O	NIL	_	NoSpaceAfter

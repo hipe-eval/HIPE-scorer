@@ -78,8 +78,8 @@ def check_spurious_tags(tags_true: set, tags_pred: set, columns: list):
 
     for pred in tags_pred:
         if pred not in tags_true:
-            msg = f"Spurious entity label '{pred}' in column {columns} in system response, which is part of the gold standard. Tag is ignored in the evaluation."
-            logging.error(msg)
+            msg = f"Unknown entity label '{pred}' in column {columns} in system response, which is part of the gold standard. Tag is ignored in the evaluation."
+            logging.warning(msg)
 
 
 def read_conll_annotations(fname, glueing_col_pairs=None, structure_only=False):
@@ -115,13 +115,13 @@ def read_conll_annotations(fname, glueing_col_pairs=None, structure_only=False):
                     sent_annotations = []
 
                 # segmenting documents
-                elif first_item.startswith("# document") and sent_annotations:
+                elif (first_item.startswith("# document") or first_item.startswith("# hipe2022:docuemnt_id")) and sent_annotations:
                     doc_annotations.append(sent_annotations)
                     annotations.append(doc_annotations)
                     sent_annotations = []
                     doc_annotations = []
 
-                elif first_item.startswith("# date"):
+                elif (first_item.startswith("# date") or first_item.startswith("# hipe2022:date")):
                     datestring = re.search(r"\d{4}-\d{2}-\d{2}", first_item).group(0)
                     date = datetime.strptime(datestring, "%Y-%m-%d")
 

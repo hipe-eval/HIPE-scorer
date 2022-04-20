@@ -44,7 +44,8 @@ class TestEvaluationResults(unittest.TestCase):
         )
 
     def test_ner_lit_1(self):
-        """Test 1: 1 NER-COARSE-LIT entity in gold, 0 in system response."""
+        """Test 1:
+        1 NER-COARSE-LIT entity in gold, 0 in system response."""
 
         true_path = "hipe_evaluation/tests/data/unittest-ner-lit-1-true.tsv"
         pred_path = true_path.replace("-true", "-pred")
@@ -54,8 +55,75 @@ class TestEvaluationResults(unittest.TestCase):
             pred_path,
         )
         self.assertEqual(evaluator.n_docs_true, 1, "Not all documents were parsed")
-        self.assertEqual(evaluator.n_lines_true, 1, "Not all layout lines  were parsed")
+        self.assertEqual(evaluator.n_lines_true, 1, "Not all layout lines were parsed")
         self.assertEqual(evaluator.n_toks_true, 16, "Not all tokens were parsed")
+
+        self._do_evaluation(
+            evaluator,
+            eval_reference_path,
+            column_name="NE-COARSE-LIT",
+            eval_type="nerc",
+        )
+
+    def test_ner_lit_2(self):
+        """Test 2:
+        2 NER-COARSE-LIT entity in gold, 2 in system response."""
+
+        true_path = "hipe_evaluation/tests/data/unittest-ner-lit-coarse-2-true.tsv"
+        pred_path = true_path.replace("-true", "-pred")
+        eval_reference_path = pred_path + ".ref_results.json"
+        evaluator: Evaluator = Evaluator(
+            true_path,
+            pred_path,
+        )
+        self.assertEqual(evaluator.n_docs_true, 1, "Not all documents were parsed")
+        self.assertEqual(evaluator.n_lines_true, 2, "Not all layout lines were parsed")
+        self.assertEqual(evaluator.n_toks_true, 32, "Not all tokens were parsed")
+
+        self._do_evaluation(
+            evaluator,
+            eval_reference_path,
+            column_name="NE-COARSE-LIT",
+            eval_type="nerc",
+        )
+
+    def test_ner_lit_3(self):
+        """Test 3:
+        3 NER-COARSE-LIT entity in gold, 3 in system response, with 1 partial (boundary overlap)."""
+
+        true_path = "hipe_evaluation/tests/data/unittest-ner-lit-coarse-3-true.tsv"
+        pred_path = true_path.replace("-true", "-pred")
+        eval_reference_path = pred_path + ".ref_results.json"
+        evaluator: Evaluator = Evaluator(
+            true_path,
+            pred_path,
+        )
+        self.assertEqual(evaluator.n_docs_true, 1, "Not all documents were parsed")
+        self.assertEqual(evaluator.n_lines_true, 2, "Not all layout lines were parsed")
+        self.assertEqual(evaluator.n_toks_true, 41, "Not all tokens were parsed")
+
+        self._do_evaluation(
+            evaluator,
+            eval_reference_path,
+            column_name="NE-COARSE-LIT",
+            eval_type="nerc",
+        )
+
+
+    def test_ner_lit_4(self):
+        """Test 4:
+        3 NER-COARSE-LIT entity in gold, 3 in system response, with 1 partial (=exact boundaries but wrong type)"""
+
+        true_path = "hipe_evaluation/tests/data/unittest-ner-lit-coarse-4-true.tsv"
+        pred_path = true_path.replace("-true", "-pred")
+        eval_reference_path = pred_path + ".ref_results.json"
+        evaluator: Evaluator = Evaluator(
+            true_path,
+            pred_path,
+        )
+        self.assertEqual(evaluator.n_docs_true, 1, "Not all documents were parsed")
+        self.assertEqual(evaluator.n_lines_true, 2, "Not all layout lines were parsed")
+        self.assertEqual(evaluator.n_toks_true, 41, "Not all tokens were parsed")
 
         self._do_evaluation(
             evaluator,

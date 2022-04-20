@@ -16,6 +16,9 @@ Options:
     --norm-time             Normalize NEL for time mentions by linking to NIL.
     --norm-histo            Normalize NEL for historical entities
     --union-meto-lit        Unionize literal and metonymic columns (apply on both columns).
+
+All file path can be local or remote URLs.
+
 """
 
 import csv

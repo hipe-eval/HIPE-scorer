@@ -9,6 +9,7 @@ The official evaluation module for the CLEF-HIPE-2020 shared task.
 import logging
 from collections import defaultdict
 from copy import deepcopy
+from typing import Union, List
 import numpy as np
 
 from hipe_evaluation.utils import (
@@ -164,7 +165,7 @@ class Evaluator:
 
     def evaluate(
         self,
-        columns: list,
+        columns: Union[List[str],str],
         eval_type: str,
         tags: set = None,  # TODO: could be renamed "expected_tags"
         merge_lines: bool = False,
@@ -193,6 +194,9 @@ class Evaluator:
         :rtype: Tuple(list, list)
 
         """
+        if eval_type not in {"nerc","nel"}:
+            logging.error(f"Unrecognized eval_type '{eval_type}': Aborting evaluation...")
+            exit(1)
 
         if isinstance(columns, str):
             columns = [columns]
@@ -609,7 +613,7 @@ class Evaluator:
 
             if not pred_tags:
                 msg = f"No tags in the column '{columns}' of the system response file: '{self.f_pred}'"
-                logging.error(msg)
+                logging.warning(msg)
 
         elif eval_type == "nel":
             # For NEL, any tag in gold standard or predictions are considered

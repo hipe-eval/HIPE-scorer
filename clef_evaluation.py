@@ -50,7 +50,7 @@ COARSE_COLUMNS = ["NE-COARSE-LIT", "NE-COARSE-METO"]
 NEL_COLUMNS = ["NEL-LIT", "NEL-METO"]
 
 
-def enforce_filename(fname: str):
+def enforce_filename(fname: str):  # TODO: add equivalent for hipe 2022 and rename this one hipe 2020
 
     try:
         f_obj = pathlib.Path(fname.lower())
@@ -82,7 +82,7 @@ def evaluation_wrapper(
     noise_levels: list = [None],
     time_periods: list = [None],
     tags: set = None,
-    additional_cols: list = None,
+    additional_cols: list = None,  # TODO: clarify role of this
 ):
     def recursive_defaultdict():
         return defaultdict(recursive_defaultdict)
@@ -100,7 +100,7 @@ def evaluation_wrapper(
         additional_col = None
         if additional_cols is not None:
             additional_col = additional_cols[col_id]
-        eval_global, eval_per_tag = evaluator.evaluate(
+        eval_global, eval_per_tag = evaluator.evaluate( # TODO: reorder passed args to match order of eval function def.
             col,
             eval_type=eval_type,
             merge_lines=True,
@@ -148,7 +148,7 @@ def get_results(
     else:
         glueing_col_pairs = None
 
-    if f_tagset:
+    if f_tagset:  # TODO: adapt for different tagsets (?)
         with open(f_tagset) as f_in:
             tagset = set(f_in.read().upper().splitlines())
     else:

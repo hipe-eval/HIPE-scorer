@@ -26,20 +26,20 @@ logger = logging.getLogger(__name__)
 
 
 class Evaluator:
-    def __init__(self, f_true, f_pred, glueing_cols=None):
+    def __init__(self, f_true, f_pred, glueing_cols=None):  # TODO: I would refactor as f_gold
         """
-        An Evaluator evalatues the system response according to the
+        An Evaluator evaluates the system response according to the
         gold standard.
 
-        Both files (gold/sytem) need to be aligned on a token level.
+        Both files (gold/system) need to be aligned on a token level.
         Any comment lines may be omitted, and, in this case, the segmentation
         into lines and documents gets reconstructed according to the gold standard.
 
         Per system, there is a single Evaluator that works as wrapper for
         various evaluation scenarios and for various columns via the method "evaluate".
 
-        :param str f_true: file name of the gold standard (CLEF tsv-format).
-        :param str f_pred: file name of the system response (CLEF tsv-format).
+        :param str f_true: file name of the gold standard (HIPE tsv-format).
+        :param str f_pred: file name of the system response (HIPE tsv-format).
         :param list glueing_cols: concat the annotation of two columns (list with tuples).
         :return: Evaluator object.
 
@@ -89,7 +89,7 @@ class Evaluator:
             "F1_macro_doc": [],
         }
 
-        #
+        # TODO: remove (?)
         # self.slot_error_rate = {
         #     "deletion": 0,
         #     "insertion": 0,
@@ -104,7 +104,7 @@ class Evaluator:
             "ent_type": deepcopy(self.metrics),
             "partial": deepcopy(self.metrics),
             "exact": deepcopy(self.metrics),
-            # "slot_error_rate": deepcopy(self.slot_error_rate),
+            # "slot_error_rate": deepcopy(self.slot_error_rate), TODO: remove (?)
         }
 
     def check_segment_mismatch(self):
@@ -166,14 +166,14 @@ class Evaluator:
         self,
         columns: list,
         eval_type: str,
-        tags: set = None,
+        tags: set = None,  # TODO: could be renamed "expected_tags"
         merge_lines: bool = False,
         n_best: int = 1,
         noise_level: tuple = None,
         time_period: tuple = None,
         additional_columns: list = None,
     ):
-        """Collect extensive statistics across labels and per entity type.
+        """Collect extensive statistics across labels and per entity type. TODO: correct "across columns"?
 
         For both, document-averaged and entity-type averaged
         macro scores are computed in addition to the global metrics.
@@ -184,7 +184,7 @@ class Evaluator:
         :param list columns: name of column that contains the annotations.
         :param str eval_type: define evaluation type for either links (nel) or entities (nerc).
         :param set tags: limit evaluation to valid tag set.
-        :param bool merge_lines: option to drop line segmentation to allow entity spans across lines.
+        :param bool merge_lines: option to drop line segmentation to allow entity spans across lines. TODO: check
         :param int n_best: number of alternative links that should be considered.
         :param tuple noise_level: lower and upper Levenshtein distance to limit evaluation to noisy entities.
         :param tuple time_period: start and end date to limit evaluation to a particular period.
@@ -595,7 +595,7 @@ class Evaluator:
             logging.info(f"Evaluation is limited to the provided tag set: {tags}")
             self.check_spurious_tags(tags, pred_tags, columns)
 
-            # take the union of the actual gold standard labels and
+            # take the union of the actual gold standard labels and  TODO: check if we want this behavior for 2022
             # labels of the response file that are valid even when not included
             # in gold standard of this particular column
             # Other spurious tags are treated as non-entity ('O' tag).
@@ -631,7 +631,8 @@ class Evaluator:
 
         for pred in tags_pred:
             if pred not in tags_true:
-                msg = f"Spurious entity label '{pred}' in column {columns} of system response file: '{self.f_pred}'. As the tag is not part of the gold standard, it is ignored in the evaluation."
+                msg = f"Spurious entity label '{pred}' in column {columns} of system response file: '{self.f_pred}'. \
+                As the tag is not part of the gold standard, it is ignored in the evaluation."
                 logging.error(msg)
 
 

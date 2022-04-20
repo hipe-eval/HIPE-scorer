@@ -84,9 +84,9 @@ def check_spurious_tags(tags_true: set, tags_pred: set, columns: list):
 
 def read_conll_annotations(fname, glueing_col_pairs=None, structure_only=False):
     """
-    Read the token annotations from a tsv file (CLEF format).
+    Read the token annotations from a tsv file (HIPE IOB tsv format).
 
-    :param str fname: file name that contains the annotation in the CLEF format.
+    :param str fname: file name that contains the annotation in the HIPE IOB tsv format.
     :param list glueing_col_pairs: concat the annotation of two columns (list with tuples).
     :param bool structure_only: read file without the actual annotation.
     :return: a nested list of TokAnnotation with the structure "[docs [sents [tokens]]]
@@ -110,7 +110,7 @@ def read_conll_annotations(fname, glueing_col_pairs=None, structure_only=False):
                 continue
             elif first_item.startswith("#"):
                 # segmenting lines
-                if first_item.startswith("# segment") and sent_annotations:
+                if first_item.startswith("# segment") and sent_annotations:  # TODO: no segment in HIPE2022, we need to use EndOfSentence
                     doc_annotations.append(sent_annotations)
                     sent_annotations = []
 

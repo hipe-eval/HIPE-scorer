@@ -1,0 +1,28 @@
+TOKEN	NE-COARSE-LIT	NE-COARSE-METO	NE-FINE-LIT	NE-FINE-METO	NE-FINE-COMP	NE-NESTED	NEL-LIT	NEL-METO	MISC
+# hipe2022:document_id = NZZ-1798-01-20-a-p0001
+# hipe2022:date = 1798-01-20
+# hipe2022:language = de
+# hipe2022:document_type = newspaper
+# hipe2022:dataset = hipe2020
+# hipe2022:original_source = v1.4.1/de/HIPE-data-v1.4.1-train-de.tsv
+# hipe2022:applicable_columns = TOKEN NE-COARSE-LIT NE-COARSE-METO NE-FINE-LIT NE-FINE-METO NE-FINE-COMP NE-NESTED NEL-LIT NEL-METO MISC
+# hipe2020:doi = https://zenodo.org/record/6046853
+# hipe2020:version = v1.4
+# hipe2020:original_license = CC-BY-NC-SA 4.0
+# hipe2020:publication_title = NZZ
+Frankreich	O	O	O	O	O	O	_	_	NoSpaceAfter
+.	O	O	O	O	O	O	_	_	EndOfLine|EndOfSentence
+Gesetzgeber	O	O	O	O	O	O	_	_	NoSpaceAfter
+.	O	O	O	O	O	O	_	_	EndOfSentence
+Den	O	O	O	O	O	O	_	_	_
+19	O	O	O	O	O	O	_	_	NoSpaceAfter
+.	O	O	O	O	O	O	_	_	_
+Niv	O	O	O	O	O	O	_	_	NoSpaceAfter
+.	O	O	O	O	O	O	_	_	EndOfSentence
+(	O	O	O	O	O	O	_	_	NoSpaceAfter
+8	O	O	O	O	O	O	_	_	NoSpaceAfter
+.	O	O	O	O	O	O	_	_	_
+Jän	O	O	O	O	O	O	_	_	NoSpaceAfter
+.	O	O	O	O	O	O	_	_	NoSpaceAfter
+)	O	O	O	O	O	O	_	_	_
+ward	O	O	O	O	O	O	_	_	EndOfLine

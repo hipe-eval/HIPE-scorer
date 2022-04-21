@@ -1,3 +1,4 @@
+TOKEN	NE-COARSE-LIT	NE-COARSE-METO	NE-FINE-LIT	NE-FINE-METO	NE-FINE-COMP	NE-NESTED	NEL-LIT	NEL-METO	MISC
 # hipe2022:document_id = EXP-1908-06-23-a-i0083
 # hipe2022:date = 1908-06-23
 # hipe2022:language = fr
@@ -21,12 +22,8 @@ des	I-org	O	I-org.ent	O	O	O	NIL	_	EndOfLine
 imprimeurs	I-org	O	I-org.ent	O	O	O	NIL	_	NoSpaceAfter
 ,	O	O	O	O	O	O	_	_	_
 réunie	O	O	O	O	O	O	_	_	_
-samedi	O	O	O	O	O	O	_	_	_
-et	O	O	O	O	O	O	_	_	_
-dimanche	O	O	O	O	O	O	_	_	EndOfLine
 à	O	O	O	O	O	O	_	_	_
 Frauenfeld	B-loc	O	B-loc.adm.town	O	O	O	Q68120	_	NoSpaceAfter
-_	NoSpaceAfter
 ,	O	O	O	O	O	O	_	_	_
 comptait	O	O	O	O	O	O	_	_	_
 de	O	O	O	O	O	O	_	_	_

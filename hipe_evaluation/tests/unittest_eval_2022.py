@@ -55,7 +55,7 @@ class TestEvaluationResults(unittest.TestCase):
             pred_path,
         )
         self.assertEqual(evaluator.n_docs_true, 1, "Not all documents were parsed")
-        self.assertEqual(evaluator.n_lines_true, 1, "Not all layout lines were parsed")
+        self.assertEqual(evaluator.n_lines_true, 1, "Not all layout lines were parsed")  # although there are 2 sent
         self.assertEqual(evaluator.n_toks_true, 16, "Not all tokens were parsed")
 
         self._do_evaluation(
@@ -77,7 +77,7 @@ class TestEvaluationResults(unittest.TestCase):
             pred_path,
         )
         self.assertEqual(evaluator.n_docs_true, 1, "Not all documents were parsed")
-        self.assertEqual(evaluator.n_lines_true, 2, "Not all layout lines were parsed")
+        self.assertEqual(evaluator.n_lines_true, 1, "Not all layout lines were parsed")  # although there are 2 sent
         self.assertEqual(evaluator.n_toks_true, 32, "Not all tokens were parsed")
 
         self._do_evaluation(
@@ -99,8 +99,8 @@ class TestEvaluationResults(unittest.TestCase):
             pred_path,
         )
         self.assertEqual(evaluator.n_docs_true, 1, "Not all documents were parsed")
-        self.assertEqual(evaluator.n_lines_true, 2, "Not all layout lines were parsed")
-        self.assertEqual(evaluator.n_toks_true, 41, "Not all tokens were parsed")
+        self.assertEqual(evaluator.n_lines_true, 1, "Not all layout lines were parsed")  # although there are 2 sent
+        self.assertEqual(evaluator.n_toks_true, 37, "Not all tokens were parsed")
 
         self._do_evaluation(
             evaluator,
@@ -122,8 +122,8 @@ class TestEvaluationResults(unittest.TestCase):
             pred_path,
         )
         self.assertEqual(evaluator.n_docs_true, 1, "Not all documents were parsed")
-        self.assertEqual(evaluator.n_lines_true, 2, "Not all layout lines were parsed")
-        self.assertEqual(evaluator.n_toks_true, 41, "Not all tokens were parsed")
+        self.assertEqual(evaluator.n_lines_true, 1, "Not all layout lines were parsed")
+        self.assertEqual(evaluator.n_toks_true, 24, "Not all tokens were parsed")
 
         self._do_evaluation(
             evaluator,
@@ -142,8 +142,15 @@ class TestEvaluationResults(unittest.TestCase):
         merge_lines: bool = False,
     ):
         """Run evaluator and compare to reference data"""
+
+        with open("./tagset-hipe2022-all.txt") as f_in:
+            tagset = set(f_in.read().upper().splitlines())
+
         eval_global, eval_per_tag = evaluator.evaluate(
-            column_name, eval_type=eval_type, tags=tags, merge_lines=merge_lines
+            column_name,
+            eval_type=eval_type,
+            tags=tagset,
+            merge_lines=merge_lines
         )
         eval_per_tag["ALL"] = eval_global
 

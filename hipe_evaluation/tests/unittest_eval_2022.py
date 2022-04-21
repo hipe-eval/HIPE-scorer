@@ -15,6 +15,15 @@ Reference evaluation json data has the following format:
  - NER: for each ner type a bunch of evaluation metrics
  - NEL: for each QID a bunch of evaluation metrics
 
+Entity matching scenarios (as in compute_metrics):
+    Scenario I  : exact match of both type and boundaries (TP).
+    Scenario II : spurious entity (insertion, FP).
+    Scenario III: missed entity (deletion, FN).
+    Scenario IV : type substitution (counted as both FP and FN in strict and fuzzy regimes).
+    Scenario V  : span substitution (overlap) (counted as both FP and FN in strict regime and as TP in fuzzy regime).
+    Scenario VI : type and span substitution (overlap) (counted as FP in strict and fuzzy regimes).
+
+
 """
 import os
 
@@ -45,7 +54,9 @@ class TestEvaluationResults(unittest.TestCase):
 
     def test_ner_lit_1(self):
         """Test 1:
-        1 NER-COARSE-LIT entity in gold, 0 in system response."""
+        1 NER-COARSE-LIT entity in gold, 0 in system response.
+        (cf. scenario III)
+        """
 
         true_path = "hipe_evaluation/tests/data/unittest-ner-lit-1-true.tsv"
         pred_path = true_path.replace("-true", "-pred")
@@ -67,7 +78,9 @@ class TestEvaluationResults(unittest.TestCase):
 
     def test_ner_lit_2(self):
         """Test 2:
-        2 NER-COARSE-LIT entity in gold, 2 in system response."""
+        2 NER-COARSE-LIT entity in gold, 2 in system response.
+        (cf. scenario I)
+        """
 
         true_path = "hipe_evaluation/tests/data/unittest-ner-lit-coarse-2-true.tsv"
         pred_path = true_path.replace("-true", "-pred")
@@ -85,11 +98,17 @@ class TestEvaluationResults(unittest.TestCase):
             eval_reference_path,
             column_name="NE-COARSE-LIT",
             eval_type="nerc",
+            macro=False
         )
 
     def test_ner_lit_3(self):
         """Test 3:
-        3 NER-COARSE-LIT entity in gold, 3 in system response, with 1 partial (boundary overlap)."""
+        3 NER-COARSE-LIT entity in gold, 3 in system response, with 1 partial (boundary overlap).
+        Details:
+        - 1 ORG (Société Suisse des imprimeurs): scenario I
+        - 1 LOC (Frauenfeld): scenario I
+        - 1 LOC (ville de Berne): scenario V
+        """
 
         true_path = "hipe_evaluation/tests/data/unittest-ner-lit-coarse-3-true.tsv"
         pred_path = true_path.replace("-true", "-pred")
@@ -107,12 +126,16 @@ class TestEvaluationResults(unittest.TestCase):
             eval_reference_path,
             column_name="NE-COARSE-LIT",
             eval_type="nerc",
+            macro=False
         )
-
 
     def test_ner_lit_4(self):
         """Test 4:
-        3 NER-COARSE-LIT entity in gold, 3 in system response, with 1 partial (=exact boundaries but wrong type)"""
+        3 NER-COARSE-LIT entity in gold, 3 in system response, with 1 partial (=exact boundaries but wrong type)
+        Details:
+        - 1 ORG (Société Suisse des imprimeurs): scenario IV
+        - 1 LOC (Frauenfeld): scenario I
+        """
 
         true_path = "hipe_evaluation/tests/data/unittest-ner-lit-coarse-4-true.tsv"
         pred_path = true_path.replace("-true", "-pred")
@@ -125,11 +148,16 @@ class TestEvaluationResults(unittest.TestCase):
         self.assertEqual(evaluator.n_lines_true, 1, "Not all layout lines were parsed")
         self.assertEqual(evaluator.n_toks_true, 24, "Not all tokens were parsed")
 
+        with open("./tagset-hipe2022-all.txt") as f_in:
+             tagset = set(f_in.read().upper().splitlines())
+
         self._do_evaluation(
             evaluator,
             eval_reference_path,
             column_name="NE-COARSE-LIT",
             eval_type="nerc",
+            tags=tagset,
+            macro=False
         )
 
     def _do_evaluation(
@@ -140,21 +168,19 @@ class TestEvaluationResults(unittest.TestCase):
         eval_type: str = "nerc",
         tags=None,
         merge_lines: bool = False,
+        macro: bool = True
     ):
         """Run evaluator and compare to reference data"""
-
-        with open("./tagset-hipe2022-all.txt") as f_in:
-            tagset = set(f_in.read().upper().splitlines())
 
         eval_global, eval_per_tag = evaluator.evaluate(
             column_name,
             eval_type=eval_type,
-            tags=tagset,
+            tags=tags,
             merge_lines=merge_lines
         )
         eval_per_tag["ALL"] = eval_global
 
-        self._compare_eval_results(eval_reference_path, eval_per_tag)
+        self._compare_eval_results(eval_reference_path, eval_per_tag, incl_macro=macro)
 
     def _test_eval_results_nel(self):
         ref_path = "hipe_evaluation/tests/results/ref_results_nel_all.json"
@@ -169,7 +195,7 @@ class TestEvaluationResults(unittest.TestCase):
         #         eval_per_tag, jsonfile, indent=4,
         #     )
 
-        self._compare_eval_results(ref_path, eval_per_tag)
+        self._compare_eval_results(ref_path, eval_per_tag, True)
 
     def _test_eval_results_nel_union(self):
         ref_path = "hipe_evaluation/tests/results/ref_results_nel_all.json"
@@ -190,9 +216,9 @@ class TestEvaluationResults(unittest.TestCase):
                 indent=4,
             )
 
-        self._compare_eval_results(ref_path, eval_per_tag)
+        self._compare_eval_results(ref_path, eval_per_tag, True)
 
-    def _compare_eval_results(self, ref_path: str, tst):
+    def _compare_eval_results(self, ref_path: str, tst, incl_macro: bool = True):
         # in case the ref_path does not exist already
         # we populate it with the tst data.
         # A manual check/selection of evaluations/fields is necessary
@@ -226,12 +252,15 @@ class TestEvaluationResults(unittest.TestCase):
         for eval_type in ref:
             for label in ref[eval_type]:
                 for metric in ref[eval_type][label]:
-                    self.assertAlmostEqual(
-                        ref[eval_type][label][metric],
-                        tst[eval_type][label][metric],
-                        msg=f"Evaluation mismatch found: \ndiff '{ref_path_sorted}'  '{tst_path_sorted}'\n'"
-                        + f"Evaluation type: '{eval_type}'; label:  '{label}'; metric: '{metric}'",
-                    )
+                    if not incl_macro and "macro" in metric:
+                        continue
+                    else:
+                        self.assertAlmostEqual(
+                            ref[eval_type][label][metric],
+                            tst[eval_type][label][metric],
+                            msg=f"Evaluation mismatch found: \ndiff '{ref_path_sorted}'  '{tst_path_sorted}'\n'"
+                            + f"Evaluation type: '{eval_type}'; label:  '{label}'; metric: '{metric}'",
+                        )
 
 
 if __name__ == "__main__":

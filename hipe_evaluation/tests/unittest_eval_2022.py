@@ -58,9 +58,9 @@ class TestEvaluationResults(unittest.TestCase):
         (cf. scenario III)
         """
 
-        true_path = "hipe_evaluation/tests/data/unittest-ner-lit-1-true.tsv"
+        true_path = "hipe_evaluation/tests/data/unittest-ner-1-true.tsv"
         pred_path = true_path.replace("-true", "-pred")
-        eval_reference_path = pred_path + ".ref_results_ner-coarse-lit.json"
+        eval_reference_path = pred_path + ".ner-coarse-lit_ref_results.json"
         evaluator: Evaluator = Evaluator(
             true_path,
             pred_path,
@@ -69,22 +69,26 @@ class TestEvaluationResults(unittest.TestCase):
         self.assertEqual(evaluator.n_lines_true, 1, "Not all layout lines were parsed")  # although there are 2 sent
         self.assertEqual(evaluator.n_toks_true, 16, "Not all tokens were parsed")
 
+        with open("./tagset-hipe2022-all.txt") as f_in:
+            tagset = set(f_in.read().upper().splitlines())
+
         self._do_evaluation(
             evaluator,
             eval_reference_path,
             column_name="NE-COARSE-LIT",
             eval_type="nerc",
+            tags=tagset
         )
 
-    def test_ner_lit_2(self):
+    def test_ner_lit_2_coarse(self):
         """Test 2:
-        2 NER-COARSE-LIT entity in gold, 2 in system response.
+        NE-COARSE-LIT: 2 entity in gold, 2 in system response.
         (cf. scenario I)
         """
 
-        true_path = "hipe_evaluation/tests/data/unittest-ner-lit-coarse-2-true.tsv"
+        true_path = "hipe_evaluation/tests/data/unittest-ner-2-true.tsv"
         pred_path = true_path.replace("-true", "-pred")
-        eval_reference_path = pred_path + ".ref_results.json"
+        eval_reference_path = pred_path + ".coarse-lit_ref_results.json"
         evaluator: Evaluator = Evaluator(
             true_path,
             pred_path,
@@ -98,6 +102,64 @@ class TestEvaluationResults(unittest.TestCase):
             eval_reference_path,
             column_name="NE-COARSE-LIT",
             eval_type="nerc",
+            macro=False
+        )
+
+    def test_ner_lit_2_nested(self):
+        """Test 2:
+        NE-NESTED: 1 entity in gold (Hambourg as loc.adm.town), 0 in system response.
+        (cf. scenario I)
+        """
+
+        true_path = "hipe_evaluation/tests/data/unittest-ner-2-true.tsv"
+        pred_path = true_path.replace("-true", "-pred")
+        eval_reference_path = pred_path + ".nested_ref_results.json"
+        evaluator: Evaluator = Evaluator(
+            true_path,
+            pred_path,
+        )
+        self.assertEqual(evaluator.n_docs_true, 1, "Not all documents were parsed")
+        self.assertEqual(evaluator.n_lines_true, 1, "Not all layout lines were parsed")  # although there are 2 sent
+        self.assertEqual(evaluator.n_toks_true, 32, "Not all tokens were parsed")
+
+        with open("./tagset-hipe2022-all.txt") as f_in:
+            tagset = set(f_in.read().upper().splitlines())
+
+        self._do_evaluation(
+            evaluator,
+            eval_reference_path,
+            column_name="NE-NESTED",
+            eval_type="nerc",
+            tags=tagset,
+            macro=False
+        )
+
+    def test_ner_lit_2_fine(self):
+        """Test 2:
+        NE-NESTED: 1 entity in gold (Hambourg as loc.adm.town), 0 in system response.
+        (cf. scenario I)
+        """
+
+        true_path = "hipe_evaluation/tests/data/unittest-ner-2-true.tsv"
+        pred_path = true_path.replace("-true", "-pred")
+        eval_reference_path = pred_path + ".fine-lit_ref_results.json"
+        evaluator: Evaluator = Evaluator(
+            true_path,
+            pred_path,
+        )
+        self.assertEqual(evaluator.n_docs_true, 1, "Not all documents were parsed")
+        self.assertEqual(evaluator.n_lines_true, 1, "Not all layout lines were parsed")  # although there are 2 sent
+        self.assertEqual(evaluator.n_toks_true, 32, "Not all tokens were parsed")
+
+        with open("./tagset-hipe2022-all.txt") as f_in:
+            tagset = set(f_in.read().upper().splitlines())
+
+        self._do_evaluation(
+            evaluator,
+            eval_reference_path,
+            column_name="NE-FINE-LIT",
+            eval_type="nerc",
+            tags=tagset,
             macro=False
         )
 
@@ -238,7 +300,8 @@ class TestEvaluationResults(unittest.TestCase):
         with open(ref_path_sorted, "w") as ref_sorted:
             json.dump(ref, ref_sorted, sort_keys=True, indent=4)
 
-        tst_path = ref_path.replace(".ref_results", ".tst_results")
+        #tst_path = ref_path.replace("ref_results.", "tst_results.")
+        tst_path = ref_path.replace("ref_results.", "tst_results.")
         tst_path_sorted = tst_path
         if ref_path != tst_path:
             tst_path_sorted += ".sorted.tmp"

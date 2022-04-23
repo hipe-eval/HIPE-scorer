@@ -107,4 +107,8 @@ venv.bak/
 .idea/
 
 #Other testing files
+#SC: That can be a dangerous one...
 *.sh
+
+#SC: Temporary sorted files
+*.tmp

@@ -28,13 +28,21 @@ Entity matching scenarios (as in compute_metrics):
 import os
 
 from hipe_evaluation.ner_eval import Evaluator
-from typing import Dict, Optional, Any
+from typing import Dict, Optional, Any, Set
 import unittest
 import logging
 import json
 
 
+def get_hipe_2022_tagset_all(file: str = "./tagset-hipe2022-all.txt") -> Set[str]:
+    with open(file) as f_in:
+        tagset = set(f_in.read().upper().splitlines())
+    return tagset
+
+
 class TestEvaluationResults(unittest.TestCase):
+    """Class for 2022 HIPE evaluation unittests"""
+
     def _test_hipe2020(self):
 
         evaluator: Evaluator = Evaluator(
@@ -53,8 +61,7 @@ class TestEvaluationResults(unittest.TestCase):
         )
 
     def test_ner_lit_1(self):
-        """Test 1:
-        1 NER-COARSE-LIT entity in gold, 0 in system response.
+        """Test data 1: 1 NER-COARSE-LIT entity in gold, 0 in system response.
         (cf. scenario III)
         """
 
@@ -66,23 +73,21 @@ class TestEvaluationResults(unittest.TestCase):
             pred_path,
         )
         self.assertEqual(evaluator.n_docs_true, 1, "Not all documents were parsed")
-        self.assertEqual(evaluator.n_lines_true, 1, "Not all layout lines were parsed")  # although there are 2 sent
+        self.assertEqual(
+            evaluator.n_lines_true, 1, "Not all layout lines were parsed"
+        )  # although there are 2 sent
         self.assertEqual(evaluator.n_toks_true, 16, "Not all tokens were parsed")
-
-        with open("./tagset-hipe2022-all.txt") as f_in:
-            tagset = set(f_in.read().upper().splitlines())
 
         self._do_evaluation(
             evaluator,
             eval_reference_path,
             column_name="NE-COARSE-LIT",
             eval_type="nerc",
-            tags=tagset
+            tags=get_hipe_2022_tagset_all(),
         )
 
     def test_ner_lit_2_coarse(self):
-        """Test 2:
-        NE-COARSE-LIT: 2 entity in gold, 2 in system response.
+        """Test data 2: NE-COARSE-LIT: 2 entity in gold, 2 in system response.
         (cf. scenario I)
         """
 
@@ -94,7 +99,9 @@ class TestEvaluationResults(unittest.TestCase):
             pred_path,
         )
         self.assertEqual(evaluator.n_docs_true, 1, "Not all documents were parsed")
-        self.assertEqual(evaluator.n_lines_true, 1, "Not all layout lines were parsed")  # although there are 2 sent
+        self.assertEqual(
+            evaluator.n_lines_true, 1, "Not all layout lines were parsed"
+        )  # although there are 2 sent
         self.assertEqual(evaluator.n_toks_true, 32, "Not all tokens were parsed")
 
         self._do_evaluation(
@@ -102,12 +109,11 @@ class TestEvaluationResults(unittest.TestCase):
             eval_reference_path,
             column_name="NE-COARSE-LIT",
             eval_type="nerc",
-            macro=False
+            macro=False,
         )
 
     def test_ner_lit_2_nested(self):
-        """Test 2:
-        NE-NESTED: 1 entity in gold (Hambourg as loc.adm.town), 0 in system response.
+        """Test 2: NE-NESTED: 1 entity in gold (Hambourg as loc.adm.town), 0 in system response.
         (cf. scenario I)
         """
 
@@ -119,24 +125,22 @@ class TestEvaluationResults(unittest.TestCase):
             pred_path,
         )
         self.assertEqual(evaluator.n_docs_true, 1, "Not all documents were parsed")
-        self.assertEqual(evaluator.n_lines_true, 1, "Not all layout lines were parsed")  # although there are 2 sent
+        self.assertEqual(
+            evaluator.n_lines_true, 1, "Not all layout lines were parsed"
+        )  # although there are 2 sent
         self.assertEqual(evaluator.n_toks_true, 32, "Not all tokens were parsed")
-
-        with open("./tagset-hipe2022-all.txt") as f_in:
-            tagset = set(f_in.read().upper().splitlines())
 
         self._do_evaluation(
             evaluator,
             eval_reference_path,
             column_name="NE-NESTED",
             eval_type="nerc",
-            tags=tagset,
-            macro=False
+            tags=get_hipe_2022_tagset_all(),
+            macro=False,
         )
 
     def test_ner_lit_2_fine(self):
-        """Test 2:
-        NE-NESTED: 1 entity in gold (Hambourg as loc.adm.town), 0 in system response.
+        """Test 2: NE-NESTED: 1 entity in gold (Hambourg as loc.adm.town), 0 in system response.
         (cf. scenario I)
         """
 
@@ -148,19 +152,18 @@ class TestEvaluationResults(unittest.TestCase):
             pred_path,
         )
         self.assertEqual(evaluator.n_docs_true, 1, "Not all documents were parsed")
-        self.assertEqual(evaluator.n_lines_true, 1, "Not all layout lines were parsed")  # although there are 2 sent
+        self.assertEqual(
+            evaluator.n_lines_true, 1, "Not all layout lines were parsed"
+        )  # although there are 2 sent
         self.assertEqual(evaluator.n_toks_true, 32, "Not all tokens were parsed")
-
-        with open("./tagset-hipe2022-all.txt") as f_in:
-            tagset = set(f_in.read().upper().splitlines())
 
         self._do_evaluation(
             evaluator,
             eval_reference_path,
             column_name="NE-FINE-LIT",
             eval_type="nerc",
-            tags=tagset,
-            macro=False
+            tags=get_hipe_2022_tagset_all(),
+            macro=False,
         )
 
     def test_ner_lit_3(self):
@@ -180,7 +183,9 @@ class TestEvaluationResults(unittest.TestCase):
             pred_path,
         )
         self.assertEqual(evaluator.n_docs_true, 1, "Not all documents were parsed")
-        self.assertEqual(evaluator.n_lines_true, 1, "Not all layout lines were parsed")  # although there are 2 sent
+        self.assertEqual(
+            evaluator.n_lines_true, 1, "Not all layout lines were parsed"
+        )  # although there are 2 sent
         self.assertEqual(evaluator.n_toks_true, 37, "Not all tokens were parsed")
 
         self._do_evaluation(
@@ -188,7 +193,7 @@ class TestEvaluationResults(unittest.TestCase):
             eval_reference_path,
             column_name="NE-COARSE-LIT",
             eval_type="nerc",
-            macro=False
+            macro=False,
         )
 
     def test_ner_lit_4(self):
@@ -210,16 +215,13 @@ class TestEvaluationResults(unittest.TestCase):
         self.assertEqual(evaluator.n_lines_true, 1, "Not all layout lines were parsed")
         self.assertEqual(evaluator.n_toks_true, 24, "Not all tokens were parsed")
 
-        with open("./tagset-hipe2022-all.txt") as f_in:
-             tagset = set(f_in.read().upper().splitlines())
-
         self._do_evaluation(
             evaluator,
             eval_reference_path,
             column_name="NE-COARSE-LIT",
             eval_type="nerc",
-            tags=tagset,
-            macro=False
+            tags=get_hipe_2022_tagset_all(),
+            macro=False,
         )
 
     def _do_evaluation(
@@ -230,15 +232,12 @@ class TestEvaluationResults(unittest.TestCase):
         eval_type: str = "nerc",
         tags=None,
         merge_lines: bool = False,
-        macro: bool = True
+        macro: bool = True,
     ):
         """Run evaluator and compare to reference data"""
 
         eval_global, eval_per_tag = evaluator.evaluate(
-            column_name,
-            eval_type=eval_type,
-            tags=tags,
-            merge_lines=merge_lines
+            column_name, eval_type=eval_type, tags=tags, merge_lines=merge_lines
         )
         eval_per_tag["ALL"] = eval_global
 
@@ -300,7 +299,7 @@ class TestEvaluationResults(unittest.TestCase):
         with open(ref_path_sorted, "w") as ref_sorted:
             json.dump(ref, ref_sorted, sort_keys=True, indent=4)
 
-        #tst_path = ref_path.replace("ref_results.", "tst_results.")
+        # tst_path = ref_path.replace("ref_results.", "tst_results.")
         tst_path = ref_path.replace("ref_results.", "tst_results.")
         tst_path_sorted = tst_path
         if ref_path != tst_path:

@@ -165,7 +165,7 @@ class Evaluator:
 
     def evaluate(
         self,
-        columns: Union[List[str],str],
+        columns: Union[List[str], str],
         eval_type: str,
         tags: set = None,  # TODO: could be renamed "expected_tags"
         merge_lines: bool = False,
@@ -194,7 +194,7 @@ class Evaluator:
         :rtype: Tuple(list, list)
 
         """
-        if eval_type not in {"nerc","nel"}:
+        if eval_type not in {"nerc", "nel"}:
             logging.error(f"Unrecognized eval_type '{eval_type}': Aborting evaluation...")
             exit(1)
 
@@ -305,7 +305,7 @@ class Evaluator:
         """Accumulate the scores (P, R, F1) across documents.
 
         When a entity does not occur in a particular document according to the gold standard,
-        it is dismissed as it would artifically lower the final measure.
+        it is dismissed as it would artificially lower the final measure.
 
         :param dict results: nested accumulator of scores across document.
         :param dict doc_results: nested scores of current document.
@@ -357,6 +357,20 @@ class Evaluator:
 
     def compute_metrics(self, true_named_entities: list, pred_named_entities: list, tags: set):
         """Compute the metrics of segment for all evaluation scenarios.
+        Example of input:
+        [
+        [Entity(e_type='PERS', start_offset=6, end_offset=9, span_text='Sociétésuissedesimprimeurs')],
+        [Entity(e_type='LOC', start_offset=13, end_offset=13, span_text='Frauenfeld')]
+        ]
+
+        Scenario I  : exact match of both type and boundaries (TP).
+        Scenario II : spurious entity (insertion, FP).
+        Scenario III: missed entity (deletion, FN).
+        Scenario IV : type substitution (counted as both FP and FN in strict and fuzzy regimes).
+        Scenario V  : span substitution (overlap) (counted as both FP and FN in strict regime and as TP in fuzzy regime).
+        Scenario VI : type and span substitution (overlap) (counted as FP in strict and fuzzy regimes).
+
+        NB: evaluation["ent_type"] corresponds to the fuzzy regime.
 
         :param list(Entity) true_named_entities: nested list with entity annotations of gold standard.
         :param list(Entity) pred_named_entities: nested list with entity annotations of system response.
@@ -398,6 +412,8 @@ class Evaluator:
             # for scenario explanation.
 
             # Scenario I: Exact match between true and pred
+            # type: equal
+            # boundaries: equal
             for true in true_named_entities:
                 if any(p == true for p in pred):
                     true_which_overlapped_with_pred.append(true)
@@ -416,7 +432,7 @@ class Evaluator:
 
             else:
 
-                # check for overlaps with any of the true entities
+                # for the current pred, check for boundary overlaps with any of the true entities
                 for true in true_named_entities:
 
                     # NOTE: error in original code: missing + 1
@@ -424,8 +440,9 @@ class Evaluator:
                     pred_range = range(pred[0].start_offset, pred[0].end_offset + 1)
                     true_range = range(true.start_offset, true.end_offset + 1)
 
-                    # Scenario IV: Offsets match, but entity type is wrong
-
+                    # Scenario IV: Substitution type, offsets match, but entity type is wrong.
+                    # type: different
+                    # boundaries: equal
                     if (
                         true.start_offset == pred[0].start_offset
                         and pred[0].end_offset == true.end_offset
@@ -462,9 +479,10 @@ class Evaluator:
                         true_which_overlapped_with_pred.append(true)
                         found_overlap = True
 
-                        # Scenario V: There is an overlap (but offsets do not match
-                        # exactly), and the entity type is the same.
-                        # 2.1 overlaps with the same entity type
+                        # Scenario V: Substitution span, offsets do not match
+                        # exactly and entity type is the same.
+                        # type: equal
+                        # boundaries: overlap
 
                         if any(p.e_type == true.e_type for p in pred):
 
@@ -484,8 +502,10 @@ class Evaluator:
 
                             break
 
-                        # Scenario VI: Entities overlap, but the entity type is
-                        # different.
+                        # Scenario VI: Substitution span and type, offsets do not match
+                        # exactly and entity type is different.
+                        # type: different
+                        # boundaries: overlap
 
                         else:
                             # overall results
@@ -679,7 +699,7 @@ def compute_actual_possible(results):
 
     # Possible: number annotations in the gold-standard which contribute to the
     # final score
-    possible = correct + incorrect + partial + missed
+    possible = correct + incorrect + partial + missed  # TODO: could come from pred (?)
 
     # Actual: number of annotations produced by the NER system
     actual = correct + incorrect + partial + spurious
@@ -687,7 +707,7 @@ def compute_actual_possible(results):
     results["actual"] = actual
     results["possible"] = possible
 
-    results["TP"] = correct
+    results["TP"] = correct  # TODO comment: TP/FP/FN values are actually not used to compute metrics (based on "correct" etc.)
     results["FP"] = actual - correct
     results["FN"] = possible - correct
 

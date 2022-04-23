@@ -637,7 +637,7 @@ class Evaluator:
             if pred not in tags_true:
                 msg = f"Spurious entity label '{pred}' in column {columns} of system response file: '{self.f_pred}'. \
                 As the tag is not part of the gold standard, it is ignored in the evaluation."
-                logging.error(msg)
+                logging.warning(msg)
 
 
 def find_overlap(true_range, pred_range):

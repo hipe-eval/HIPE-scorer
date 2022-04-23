@@ -265,7 +265,7 @@ def collect_named_entities(tokens: [TokAnnotation], cols: list):
             end_offset = None
             span_text = ""
 
-        span_text += token.TOKEN
+        span_text += token.TOKEN  # TODO: add space between tokens: + " "
 
     # catches an entity that goes up until the last token
     if ent_type and start_offset is not None and end_offset is None:

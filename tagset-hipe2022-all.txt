@@ -5,6 +5,8 @@ comp.function
 comp.name
 comp.qualifier
 comp.title
+date
+scope
 loc
 loc.add
 loc.add.elec
@@ -29,6 +31,14 @@ org.ent.pressagency
 per
 per.author
 pers
+pers.author
+pers.editor
+pers.myth
+pers.other
+work.primlit
+work.seclit
+object.manuscr
+object.museum
 pers.coll
 pers.ind
 pers.ind.articleauthor

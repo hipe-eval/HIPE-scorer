@@ -100,10 +100,10 @@ def evaluation_wrapper(
         additional_col = None
         if additional_cols is not None:
             additional_col = additional_cols[col_id]
-        eval_global, eval_per_tag = evaluator.evaluate( # TODO: reorder passed args to match order of eval function def.
+        eval_global, eval_per_tag = evaluator.evaluate(  # TODO: reorder passed args to match order of eval function def
             col,
             eval_type=eval_type,
-            merge_lines=True,
+            merge_lines=True,  # TODO: should be false for all hipe 2022
             n_best=n_best,
             noise_level=noise_level,
             time_period=time_period,

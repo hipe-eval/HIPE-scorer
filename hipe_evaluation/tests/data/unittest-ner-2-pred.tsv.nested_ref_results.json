@@ -184,7 +184,7 @@
             "P_macro": 0.0,
             "R_macro": 0.0,
             "F1_macro": 0.0,
-            "F1_macro (recomputed from P & R)": 1.0
+            "F1_macro (recomputed from P & R)": 0.0
         }
     }
 }

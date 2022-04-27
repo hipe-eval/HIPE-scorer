@@ -15,6 +15,7 @@ Usage:
 Options:
     -h --help               Show this screen.
     -t --task=<type>        Type of evaluation task (nerc_coarse, nerc_fine, nel).
+    -e --hipe_edition=<str> Specify the HIPE edition (triggers different set of columns to be considered during eval). Possible values: hipe-2020, hipe2022
     -r --ref=<fpath>        Path to gold standard file in CONLL-U-style format.
     -p --pred=<fpath>       Path to system prediction file in CONLL-U-style format.
     -o --outdir=<dir>       Path to output directory [default: .].
@@ -45,10 +46,19 @@ from docopt import docopt
 
 from hipe_evaluation.ner_eval import Evaluator
 
-FINE_COLUMNS = ["NE-FINE-LIT", "NE-FINE-METO", "NE-FINE-COMP", "NE-NESTED"]
-COARSE_COLUMNS = ["NE-COARSE-LIT", "NE-COARSE-METO"]
-NEL_COLUMNS = ["NEL-LIT", "NEL-METO"]
+# FINE_COLUMNS = ["NE-FINE-LIT", "NE-FINE-METO", "NE-FINE-COMP", "NE-NESTED"]
+# COARSE_COLUMNS = ["NE-COARSE-LIT", "NE-COARSE-METO"]
+# NEL_COLUMNS = ["NEL-LIT", "NEL-METO"]
 
+COARSE_COLUMNS_HIPE2020 = ["NE-COARSE-LIT", "NE-COARSE-METO"]
+FINE_COLUMNS_HIPE2020 = ["NE-FINE-LIT", "NE-FINE-METO", "NE-FINE-COMP", "NE-NESTED"]
+NEL_COLUMNS_HIPE2020 = ["NEL-LIT", "NEL-METO"]
+
+COARSE_COLUMNS_HIPE2022 = ["NE-COARSE-LIT"]
+FINE_COLUMNS_HIPE2022 = ["NE-FINE-LIT", "NE-NESTED"]
+NEL_COLUMNS_HIPE2022 = ["NEL-LIT"]
+
+HIPE_EDITIONS = ["HIPE-2020", "HIPE-2022"]
 
 def enforce_filename(fname: str):  # TODO: add equivalent for hipe 2022 and rename this one hipe 2020
 
@@ -125,6 +135,7 @@ def get_results(
     f_ref: str,
     f_pred: str,
     task: str,
+    edition: str,
     skip_check: bool = False,
     glueing_cols: str = None,
     n_best: list = [1],
@@ -157,12 +168,15 @@ def get_results(
     evaluator = Evaluator(f_ref, f_pred, glueing_col_pairs)
 
     if task in ("nerc_fine", "nerc_coarse"):
-        columns = FINE_COLUMNS if task == "nerc_fine" else COARSE_COLUMNS
+        if edition.upper() == "HIPE-2022":
+            ner_columns = FINE_COLUMNS_HIPE2022 if task == "nerc_fine" else COARSE_COLUMNS_HIPE2022
+        elif edition.upper() == "HIPE-2020":
+            ner_columns = FINE_COLUMNS_HIPE2020 if task == "nerc_fine" else COARSE_COLUMNS_HIPE2020
 
         eval_stats = evaluation_wrapper(
             evaluator,
             eval_type="nerc",
-            cols=columns,
+            cols=ner_columns,
             tags=tagset,
             noise_levels=noise_levels,
             time_periods=time_periods,
@@ -174,14 +188,15 @@ def get_results(
         rows = []
         eval_stats = {}
 
-        nel_additional_cols = COARSE_COLUMNS
+        nel_additional_cols = COARSE_COLUMNS_HIPE2020 if edition.upper() == "HIPE-2020" else COARSE_COLUMNS_HIPE2022
+        nel_columns = NEL_COLUMNS_HIPE2020 if edition.upper() == "HIPE-2020" else NEL_COLUMNS_HIPE2022
         if original_nel:
             nel_additional_cols = None
         for n in n_best:
             eval_stats[n] = evaluation_wrapper(
                 evaluator,
                 eval_type="nel",
-                cols=NEL_COLUMNS,
+                cols=nel_columns,
                 additional_cols=nel_additional_cols,
                 n_best=n,
                 noise_levels=noise_levels,
@@ -333,6 +348,7 @@ def main(args):
     f_ref = args["--ref"]
     f_pred = args["--pred"]
     outdir = args["--outdir"]
+    hipe_edition = args["--hipe_edition"]
     f_log = args["--log"]
     task = args["--task"]
     original_nel = args["--original_nel"]
@@ -356,6 +372,11 @@ def main(args):
     handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(logging.ERROR)
     logging.getLogger().addHandler(handler)
+
+    if hipe_edition.upper() not in HIPE_EDITIONS:
+        msg = f"Hipe edition was not or incorrectly set. Use --hipe_edition=hipe-2022 or --hipe_edition=hipe-2022. '"
+        print(msg)
+        sys.exit(1)
 
     if n_best:
         n_best = [int(n) for n in n_best.split(",")]
@@ -394,6 +415,7 @@ def main(args):
             f_ref,
             f_pred,
             task,
+            hipe_edition,
             skip_check,
             glueing_cols,
             n_best,

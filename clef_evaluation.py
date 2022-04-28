@@ -97,6 +97,8 @@ def evaluation_wrapper(
     def recursive_defaultdict():
         return defaultdict(recursive_defaultdict)
 
+    results = recursive_defaultdict()
+
     if additional_cols is not None:
         try:
             assert len(cols) == len(additional_cols)
@@ -104,12 +106,12 @@ def evaluation_wrapper(
             msg = f"Additional columns must have the same size that columns. Got {cols} and {additional_cols}."
             logging.error(msg)
             raise AssertionError(msg)
-    results = recursive_defaultdict()
 
     for (col_id, col), noise_level, time_period in itertools.product(enumerate(cols), noise_levels, time_periods):
         additional_col = None
         if additional_cols is not None:
             additional_col = additional_cols[col_id]
+
         eval_global, eval_per_tag = evaluator.evaluate(  # TODO: reorder passed args to match order of eval function def
             col,
             eval_type=eval_type,
@@ -188,10 +190,13 @@ def get_results(
         rows = []
         eval_stats = {}
 
-        nel_additional_cols = COARSE_COLUMNS_HIPE2020 if edition.upper() == "HIPE-2020" else COARSE_COLUMNS_HIPE2022
         nel_columns = NEL_COLUMNS_HIPE2020 if edition.upper() == "HIPE-2020" else NEL_COLUMNS_HIPE2022
+
         if original_nel:
             nel_additional_cols = None
+        else:
+            nel_additional_cols = COARSE_COLUMNS_HIPE2020 if edition.upper() == "HIPE-2020" else COARSE_COLUMNS_HIPE2022
+
         for n in n_best:
             eval_stats[n] = evaluation_wrapper(
                 evaluator,
@@ -220,7 +225,7 @@ def get_results(
     f_tsv = str(pathlib.Path(outdir) / f_sub.name.replace(".tsv", f"_{task}{suffix}.tsv"))
     f_json = str(pathlib.Path(outdir) / f_sub.name.replace(".tsv", f"_{task}{suffix}.json"))
 
-    # write condesed results to tsv
+    # write condensed results to tsv
     with open(f_tsv, "w") as csvfile:
         writer = csv.DictWriter(csvfile, delimiter="\t", fieldnames=fieldnames)
         writer.writeheader()

@@ -344,8 +344,6 @@ def collect_link_objects_ner(tokens, link_cols, ner_cols, n_best=1, gs=False):
             if token_link_tag not in ("_", "-"):
                 links.append(Entity(token_link_tag, offset, offset, token.TOKEN))
 
-
-
         # start of a new ner object
         elif ner_type is None:
             ent_type = token_link_tag
@@ -353,7 +351,7 @@ def collect_link_objects_ner(tokens, link_cols, ner_cols, n_best=1, gs=False):
             start_offset = offset
             span_text = ""
 
-        #Start of a new nel object but still within the same ner object
+        # start of a new nel object but still within the same ner object
         elif ner_type == token_ner_tag[2:] and token_ner_tag[:1] == "I" and ent_type != token_link_tag:
             if gs:
                 msg = f"A named entity in the GOLD STANDARD has different links within its tokens: {ent_type} != {token_link_tag}. Keeping the first link."

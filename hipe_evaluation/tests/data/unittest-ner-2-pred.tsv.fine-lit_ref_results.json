@@ -1,5 +1,5 @@
 {
-    "LOC": {
+    "LOC.ADM.TOWN": {
         "partial": {
             "correct": 1,
             "incorrect": 0,
@@ -43,8 +43,8 @@
             "F1_macro_doc_std": 0.0
         },
         "ent_type": {
-            "correct": 0,
-            "incorrect": 1,
+            "correct": 1,
+            "incorrect": 0,
             "partial": 0,
             "missed": 0,
             "spurious": 0,
@@ -85,11 +85,11 @@
             "F1_macro_doc_std": 0.0
         }
     },
-    "PERS": {
+    "PERS.IND": {
         "partial": {
-            "correct": 0,
+            "correct": 1,
             "incorrect": 0,
-            "partial": 1,
+            "partial": 0,
             "missed": 0,
             "spurious": 0,
             "possible": 1,
@@ -116,11 +116,11 @@
             "possible": 1,
             "actual": 1,
             "TP": 0,
-            "FP": 0,
-            "FN": 0,
+            "FP": 1,
+            "FN": 1,
             "P_micro": 0.0,
             "R_micro": 0.0,
-            "F1_micro": 0.0,
+            "F1_micro": 0,
             "P_macro_doc": 0.0,
             "R_macro_doc": 0.0,
             "F1_macro_doc": 0.0,
@@ -137,11 +137,11 @@
             "possible": 1,
             "actual": 1,
             "TP": 0,
-            "FP": 0,
-            "FN": 0,
+            "FP": 1,
+            "FN": 1,
             "P_micro": 0.0,
             "R_micro": 0.0,
-            "F1_micro": 0.0,
+            "F1_micro": 0,
             "P_macro_doc": 0.0,
             "R_macro_doc": 0.0,
             "F1_macro_doc": 0.0,
@@ -173,8 +173,8 @@
     },
     "ALL": {
         "partial": {
-            "correct": 1,
-            "incorrect": 1,
+            "correct": 2,
+            "incorrect": 0,
             "partial": 0,
             "missed": 0,
             "spurious": 0,
@@ -206,21 +206,21 @@
             "possible": 2,
             "actual": 2,
             "TP": 1,
-            "FP": 0,
-            "FN": 0,
+            "FP": 1,
+            "FN": 1,
             "P_micro": 0.5,
             "R_micro": 0.5,
             "F1_micro": 0.5,
-            "P_macro_doc": 0.0,
-            "R_macro_doc": 0.0,
-            "F1_macro_doc": 0.0,
+            "P_macro_doc": 0.5,
+            "R_macro_doc": 0.5,
+            "F1_macro_doc": 0.5,
             "P_macro_doc_std": 0.0,
             "R_macro_doc_std": 0.0,
             "F1_macro_doc_std": 0.0,
-            "P_macro": 0.0,
-            "R_macro": 0.0,
-            "F1_macro": 0.0,
-            "F1_macro (recomputed from P & R)": 1.0
+            "P_macro": 0.5,
+            "R_macro": 0.5,
+            "F1_macro": 0.5,
+            "F1_macro (recomputed from P & R)": 0.5
         },
         "ent_type": {
             "correct": 1,
@@ -231,21 +231,21 @@
             "possible": 2,
             "actual": 2,
             "TP": 1,
-            "FP": 0,
-            "FN": 0,
-            "P_micro": 1.0,
-            "R_micro": 1.0,
-            "F1_micro": 1.0,
-            "P_macro_doc": 1.0,
-            "R_macro_doc": 1.0,
-            "F1_macro_doc": 1.0,
+            "FP": 1,
+            "FN": 1,
+            "P_micro": 0.5,
+            "R_micro": 0.5,
+            "F1_micro": 0.5,
+            "P_macro_doc": 0.5,
+            "R_macro_doc": 0.5,
+            "F1_macro_doc": 0.5,
             "P_macro_doc_std": 0.0,
             "R_macro_doc_std": 0.0,
             "F1_macro_doc_std": 0.0,
-            "P_macro": 1.0,
-            "R_macro": 1.0,
-            "F1_macro": 1.0,
-            "F1_macro (recomputed from P & R)": 1.0
+            "P_macro": 0.5,
+            "R_macro": 0.5,
+            "F1_macro": 0.5,
+            "F1_macro (recomputed from P & R)": 0.5
         },
         "exact": {
             "correct": 2,

@@ -140,7 +140,7 @@
             "correct": 0,
             "incorrect": 0,
             "partial": 0,
-            "missed": 0,
+            "missed": 1,
             "spurious": 0,
             "possible": 1,
             "actual": 0,

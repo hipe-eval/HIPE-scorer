@@ -26,7 +26,7 @@ class TestEvaluationResults(unittest.TestCase):
         self.assertEqual(self.evaluator.n_toks_true, self.n_tokens, "Not all tokens were parsed")
 
     def test_eval_results_nerc(self):
-        ref_path = "hipe_evaluation/tests/results/ref_results_nerc_fine_all.json"
+        ref_path = "hipe_evaluation/tests/data/ref_results_nerc_fine_all.json"
 
         eval_global, eval_per_tag = self.evaluator.evaluate(
             "NE-FINE-LIT", eval_type="nerc", tags=None, merge_lines=True
@@ -41,7 +41,7 @@ class TestEvaluationResults(unittest.TestCase):
         self._compare_eval_results(ref_path, eval_per_tag)
 
     def test_eval_results_nel(self):
-        ref_path = "hipe_evaluation/tests/results/ref_results_nel_all.json"
+        ref_path = "hipe_evaluation/tests/data/ref_results_nel_all.json"
 
         eval_global, eval_per_tag = self.evaluator.evaluate(
             "NEL-LIT", eval_type="nel", tags=None, merge_lines=True, n_best=3
@@ -56,10 +56,50 @@ class TestEvaluationResults(unittest.TestCase):
         self._compare_eval_results(ref_path, eval_per_tag)
 
     def test_eval_results_nel_union(self):
-        ref_path = "hipe_evaluation/tests/results/ref_results_nel_all.json"
+        ref_path = "hipe_evaluation/tests/data/ref_results_nel_all.json"
 
         eval_global, eval_per_tag = self.evaluator.evaluate(
             ["NEL-LIT", "NEL-METO"], eval_type="nel", tags=None, merge_lines=True, n_best=1
+        )
+        eval_per_tag["ALL"] = eval_global
+
+        with open("results_nel_all.json", "w") as jsonfile:
+            json.dump(
+                eval_per_tag, jsonfile, indent=4,
+            )
+
+        self._compare_eval_results(ref_path, eval_per_tag)
+
+    def test_eval2022_results_nel(self):
+        ref_path = "hipe_evaluation/tests/data/ref_results_nel_all.json"
+
+        eval_global, eval_per_tag = self.evaluator.evaluate(
+            "NEL-LIT",
+            eval_type="nel",
+            tags=None,
+            merge_lines=True,
+            n_best=3,
+            additional_columns=["NE-COARSE-LIT"]
+        )
+        eval_per_tag["ALL"] = eval_global
+
+        # with open("results_nel_all.json", "w") as jsonfile:
+        #     json.dump(
+        #         eval_per_tag, jsonfile, indent=4,
+        #     )
+
+        self._compare_eval_results(ref_path, eval_per_tag)
+
+    def test_eval2022_results_nel_union(self):
+        ref_path = "hipe_evaluation/tests/data/ref_results_nel_all.json"
+
+        eval_global, eval_per_tag = self.evaluator.evaluate(
+            ["NEL-LIT", "NEL-METO"],
+            eval_type="nel",
+            tags=None,
+            merge_lines=True,
+            n_best=1,
+            additional_columns=["NE-COARSE-LIT"]
         )
         eval_per_tag["ALL"] = eval_global
 

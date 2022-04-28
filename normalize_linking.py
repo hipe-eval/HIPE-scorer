@@ -2,7 +2,7 @@
 # coding: utf-8
 
 """
-Normalize entity linking by remapping linkgs according to an external file
+Normalize entity linking by remapping links according to an external file
 
 Usage:
     normalize_linking.py -i=<fpath> -o=<fpath> [--norm-time (--norm-histo --map=<fpath>) --union-meto-lit]

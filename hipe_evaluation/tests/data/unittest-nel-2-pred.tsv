@@ -1,0 +1,41 @@
+TOKEN	NE-COARSE-LIT	NE-COARSE-METO	NE-FINE-LIT	NE-FINE-METO	NE-FINE-COMP	NE-NESTED	NEL-LIT	NEL-METO	MISC
+#	hipe2022:document_id	=	EXP-1888-01-09-a-i0035
+#	hipe2022:date	=	1888-01-09
+#	hipe2022:language	=	fr
+#	hipe2022:document_type	=	newspaper
+#	hipe2022:dataset	=	hipe2020
+#	hipe2022:original_source	=	v1.4.1/fr/HIPE-data-v1.4.1-train-fr.tsv
+#	hipe2022:applicable_columns	=	TOKEN	NE-COARSE-LIT	NE-COARSE-METO	NE-FINE-LIT	NE-FINE-METO	NE-FINE-COMP	NE-NESTED	NEL-LIT	NEL-METO	MISC
+#	hipe2020:doi	=	https://zenodo.org/record/6046853
+#	hipe2020:version	=	v1.4
+#	NOTE:	completely	artificial	example	with	NIL	consecutive	entities	in	pred
+à	O	O	O	O	O	O	_	_	_
+la	O	O	O	O	O	O	_	_	_
+demande	O	O	O	O	O	O	_	_	EndOfLine
+de	O	O	O	O	O	O	_	_	_
+M	B-pers	O	B-pers.ind	O	B-comp.title	O	NIL	_	NoSpaceAfter
+.	I-pers	O	I-pers.ind	O	I-comp.title	O	NIL	_	_
+Lasies	I-pers	O	I-pers.ind	O	B-comp.name	O	NIL	_	NoSpaceAfter
+.	O	O	O	O	O	O	_	_	EndOfLine|EndOfSentence
+i	O	O	O	O	O	O	_	_	_
+M	B-pers	O	B-pers.ind	O	B-comp.title	O	NIL	_	NoSpaceAfter
+.	I-pers	O	I-pers.ind	O	I-comp.title	O	NIL	_	_
+Berteaux	I-pers	O	I-pers.ind	O	B-comp.name	O	NIL	_	NoSpaceAfter
+,	I-pers	O	I-pers.ind	O	O	O	NIL	_	_
+président	I-pers	O	I-pers.ind	O	B-comp.function	O	NIL	_	_
+de	I-pers	O	I-pers.ind	O	I-comp.function	O	NIL	_	_
+la	I-pers	O	I-pers.ind	O	I-comp.function	O	NIL	_	_
+commission	I-pers	O	I-pers.ind	O	I-comp.function	O	NIL	_	EndOfLine
+de	I-pers	O	I-pers.ind	O	I-comp.function	O	NIL	_	_
+l	I-pers	O	I-pers.ind	O	I-comp.function	O	NIL	_	NoSpaceAfter
+'	I-pers	O	I-pers.ind	O	I-comp.function	O	NIL	_	NoSpaceAfter
+année	I-pers	O	I-pers.ind	O	I-comp.function	O	NIL	_	NoSpaceAfter
+M	B-pers	O	B-pers.ind	O	B-comp.title	O	NIL	_	NoSpaceAfter
+.	I-pers	O	I-pers.ind	O	I-comp.title	O	NIL	_	EndOfLine
+Lasies	I-pers	O	I-pers.ind	O	B-comp.name	O	NIL	_	_
+M	B-pers	O	B-pers.ind	O	B-comp.title	O	Q172161	_	_
+Reinach	I-pers	O	I-pers.ind	O	B-comp.name	O	Q172161	_	_
+au	O	O	O	O	O	O	_	_	_
+grade	O	O	O	O	O	O	_	_	_
+de	O	O	O	O	O	O	_	_	EndOfLine
+capitaine	O	O	O	O	O	O	_	_	_

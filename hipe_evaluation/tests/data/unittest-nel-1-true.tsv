@@ -1,0 +1,49 @@
+TOKEN	NE-COARSE-LIT	NE-COARSE-METO	NE-FINE-LIT	NE-FINE-METO	NE-FINE-COMP	NE-NESTED	NEL-LIT	NEL-METO	MISC
+# hipe2022:document_id = EXP-1908-06-23-a-i0083
+# hipe2022:date = 1908-06-23
+# hipe2022:language = fr
+# hipe2022:document_type = newspaper
+# hipe2022:dataset = hipe2020
+# hipe2022:original_source = v1.4.1/fr/HIPE-data-v1.4.1-dev-fr.tsv
+# hipe2022:applicable_columns = TOKEN NE-COARSE-LIT NE-COARSE-METO NE-FINE-LIT NE-FINE-METO NE-FINE-COMP NE-NESTED NEL-LIT NEL-METO MISC
+# hipe2020:doi = https://zenodo.org/record/6046853
+# hipe2020:version = v1.4
+# hipe2020:original_license = CC-BY-NC-SA 4.0
+# hipe2020:publication_title = EXP
+L	O	O	O	O	O	O	_	_	NoSpaceAfter
+'	O	O	O	O	O	O	_	_	NoSpaceAfter
+assemblée	O	O	O	O	O	O	_	_	_
+générale	O	O	O	O	O	O	_	_	_
+de	O	O	O	O	O	O	_	_	_
+la	O	O	O	O	O	O	_	_	_
+Société	B-org	O	B-org.ent	O	O	O	NIL	_	_
+suisse	I-org	O	I-org.ent	O	O	O	NIL	_	_
+des	I-org	O	I-org.ent	O	O	O	NIL	_	EndOfLine
+imprimeurs	I-org	O	I-org.ent	O	O	O	NIL	_	NoSpaceAfter
+,	O	O	O	O	O	O	_	_	_
+réunie	O	O	O	O	O	O	_	_	_
+à	O	O	O	O	O	O	_	_	_
+Frauenfeld	B-loc	O	B-loc.adm.town	O	O	O	Q68120	_	NoSpaceAfter
+,	O	O	O	O	O	O	_	_	_
+comptait	O	O	O	O	O	O	_	_	_
+de	O	O	O	O	O	O	_	_	_
+nombreux	O	O	O	O	O	O	_	_	EndOfLine
+_	O	O	O	O	O	O	_	_	NoSpaceAfter
+parfic	O	O	O	O	O	O	_	_	NoSpaceAfter
+-	O	O	O	O	O	O	_	_	NoSpaceAfter
+-	O	O	O	O	O	O	_	_	NoSpaceAfter
+pants	O	O	O	O	O	O	_	_	NoSpaceAfter
+.	O	O	O	O	O	O	_	_	EndOfSentence
+La	O	O	O	O	O	O	_	_	_
+ville	B-loc	O	B-loc.adm.town	O	O	O	Q70	_	_
+de	I-loc	O	I-loc.adm.town	O	O	O	Q70	_	_
+Berne	I-loc	O	I-loc.adm.town	O	B-comp.name	O	Q70	_	_
+va	O	O	O	O	O	O	_	_	_
+être	O	O	O	O	O	O	_	_	_
+dotée	O	O	O	O	O	O	_	_	EndOfLine
+d	O	O	O	O	O	O	_	_	NoSpaceAfter
+'	O	O	O	O	O	O	_	_	NoSpaceAfter
+un	O	O	O	O	O	O	_	_	_
+trottoir	O	O	O	O	O	O	_	_	_
+roulant	O	O	O	O	O	O	_	_	NoSpaceAfter
+!	O	O	O	O	O	O	_	_	EndOfSentence

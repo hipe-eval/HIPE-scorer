@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # coding: utf-8
 
-
 """
 Unit test to check the evaluation results for the HIPE Shared Task
 
@@ -9,7 +8,6 @@ Each test case is responsible for reading
  - true gold predictions
  - system predictions
  - reference evaluation json data (expected output from evaluator)
-
 
 Reference evaluation json data has the following format:
  - NER: for each ner type a bunch of evaluation metrics
@@ -22,8 +20,6 @@ Entity matching scenarios (as in compute_metrics):
     Scenario IV : type substitution (counted as both FP and FN in strict and fuzzy regimes).
     Scenario V  : span substitution (overlap) (counted as both FP and FN in strict regime and as TP in fuzzy regime).
     Scenario VI : type and span substitution (overlap) (counted as FP in strict and fuzzy regimes).
-
-
 """
 import os
 
@@ -43,29 +39,11 @@ def get_hipe_2022_tagset_all(file: str = "./tagset-hipe2022-all.txt") -> Set[str
 class TestEvaluationResults(unittest.TestCase):
     """Class for 2022 HIPE evaluation unittests"""
 
-    def _test_hipe2020(self):
-
-        evaluator: Evaluator = Evaluator(
-            "hipe_evaluation/tests/data/unittest-true_bundle3_de_2020.tsv",
-            "hipe_evaluation/tests/data/unittest-pred_bundle3_de_2020.tsv",
-        )
-        self.assertEqual(evaluator.n_docs_true, 2, "Not all documents were parsed")
-        self.assertEqual(evaluator.n_lines_true, 21, "Not all lines were parsed")
-        self.assertEqual(evaluator.n_toks_true, 129, "Not all tokens were parsed")
-        nerc_fine_reference_data = "hipe_evaluation/tests/data/unittest-pred_bundle3_de_2020.ref_results_nerc_fine.json"
-        self._do_evaluation(
-            evaluator,
-            nerc_fine_reference_data,
-            column_name="NE-FINE-LIT",
-            eval_type="nerc",
-        )
-
     def test_ner_lit_1(self):
         """ NER  Test 1:
         1 NER-COARSE-LIT entity in gold, 0 in system response.
         (cf. scenario III)
         """
-
         true_path = "hipe_evaluation/tests/data/unittest-ner-1-true.tsv"
         pred_path = true_path.replace("-true", "-pred")
         eval_reference_path = pred_path + ".ner-coarse-lit_ref_results.json"
@@ -74,7 +52,7 @@ class TestEvaluationResults(unittest.TestCase):
             pred_path,
         )
         self.assertEqual(evaluator.n_docs_true, 1, "Not all documents were parsed")
-        self.assertEqual(evaluator.n_lines_true, 1, "Not all layout lines were parsed")  # although there are 2 sent
+        self.assertEqual(evaluator.n_lines_true, 1, "Not all layout lines were parsed") # lines = hipe2020 segment legacy
         self.assertEqual(evaluator.n_toks_true, 16, "Not all tokens were parsed")
 
         self._do_evaluation(
@@ -90,7 +68,6 @@ class TestEvaluationResults(unittest.TestCase):
         NE-COARSE-LIT: 2 entity in gold, 2 in system response.
         (cf. scenario I)
         """
-
         true_path = "hipe_evaluation/tests/data/unittest-ner-2-true.tsv"
         pred_path = true_path.replace("-true", "-pred")
         eval_reference_path = pred_path + ".coarse-lit_ref_results.json"
@@ -99,7 +76,7 @@ class TestEvaluationResults(unittest.TestCase):
             pred_path,
         )
         self.assertEqual(evaluator.n_docs_true, 1, "Not all documents were parsed")
-        self.assertEqual(evaluator.n_lines_true, 1, "Not all layout lines were parsed")  # although there are 2 sent
+        self.assertEqual(evaluator.n_lines_true, 1, "Not all layout lines were parsed")
         self.assertEqual(evaluator.n_toks_true, 32, "Not all tokens were parsed")
 
         self._do_evaluation(
@@ -115,7 +92,6 @@ class TestEvaluationResults(unittest.TestCase):
         NE-NESTED: 1 entity in gold (Hambourg as loc.adm.town), 0 in system response.
         (cf. scenario I)
         """
-
         true_path = "hipe_evaluation/tests/data/unittest-ner-2-true.tsv"
         pred_path = true_path.replace("-true", "-pred")
         eval_reference_path = pred_path + ".nested_ref_results.json"
@@ -124,7 +100,7 @@ class TestEvaluationResults(unittest.TestCase):
             pred_path,
         )
         self.assertEqual(evaluator.n_docs_true, 1, "Not all documents were parsed")
-        self.assertEqual(evaluator.n_lines_true, 1, "Not all layout lines were parsed")  # although there are 2 sent
+        self.assertEqual(evaluator.n_lines_true, 1, "Not all layout lines were parsed")
         self.assertEqual(evaluator.n_toks_true, 32, "Not all tokens were parsed")
 
         self._do_evaluation(
@@ -139,7 +115,6 @@ class TestEvaluationResults(unittest.TestCase):
     def test_ner_lit_2_fine(self):
         """ NER Test 2:
         """
-
         true_path = "hipe_evaluation/tests/data/unittest-ner-2-true.tsv"
         pred_path = true_path.replace("-true", "-pred")
         eval_reference_path = pred_path + ".fine-lit_ref_results.json"
@@ -148,7 +123,7 @@ class TestEvaluationResults(unittest.TestCase):
             pred_path,
         )
         self.assertEqual(evaluator.n_docs_true, 1, "Not all documents were parsed")
-        self.assertEqual(evaluator.n_lines_true, 1, "Not all layout lines were parsed")  # although there are 2 sent
+        self.assertEqual(evaluator.n_lines_true, 1, "Not all layout lines were parsed")
         self.assertEqual(evaluator.n_toks_true, 32, "Not all tokens were parsed")
 
         self._do_evaluation(
@@ -168,7 +143,6 @@ class TestEvaluationResults(unittest.TestCase):
         - 1 LOC (Frauenfeld): scenario I
         - 1 LOC (ville de Berne): scenario V
         """
-
         true_path = "hipe_evaluation/tests/data/unittest-ner-lit-coarse-3-true.tsv"
         pred_path = true_path.replace("-true", "-pred")
         eval_reference_path = pred_path + ".ref_results.json"
@@ -177,7 +151,7 @@ class TestEvaluationResults(unittest.TestCase):
             pred_path,
         )
         self.assertEqual(evaluator.n_docs_true, 1, "Not all documents were parsed")
-        self.assertEqual(evaluator.n_lines_true, 1, "Not all layout lines were parsed")  # although there are 2 sent
+        self.assertEqual(evaluator.n_lines_true, 1, "Not all layout lines were parsed")
         self.assertEqual(evaluator.n_toks_true, 37, "Not all tokens were parsed")
 
         self._do_evaluation(
@@ -195,7 +169,6 @@ class TestEvaluationResults(unittest.TestCase):
         - 1 ORG (Société Suisse des imprimeurs): scenario IV
         - 1 LOC (Frauenfeld): scenario I
         """
-
         true_path = "hipe_evaluation/tests/data/unittest-ner-lit-coarse-4-true.tsv"
         pred_path = true_path.replace("-true", "-pred")
         eval_reference_path = pred_path + ".ref_results.json"
@@ -224,7 +197,6 @@ class TestEvaluationResults(unittest.TestCase):
         - 1 LOC (Frauenfeld): QID OK, scenario I
         - 1 LOC (ville de Berne): QID OK, "partial" mention coveragescenario V
         """
-
         true_path = "hipe_evaluation/tests/data/unittest-nel-1-true.tsv"
         pred_path = true_path.replace("-true", "-pred")
         eval_reference_path = pred_path + ".ref_results.json"
@@ -245,8 +217,8 @@ class TestEvaluationResults(unittest.TestCase):
         )
 
     def test_nel_2_consecutive_NIL_pred_concat(self):
-        """ NEL Test 2: consecutive NIL in system response, incorrectly evaluated as one (concatenated)
-        2 QIDs and 2 NIL entity links in gold, idem in system response, with consecutive NIL (highly improbable)
+        """ NEL Test 2: consecutive NIL in system response, incorrectly evaluated as one (concatenated).
+        2 QIDs and 2 NIL links in gold, idem in system response, with consecutive NIL (highly improbable).
         Details:
         - Lasie/NIL: OK, isolated in gold and in system
         - Berteaux/Q3300415: is NIL in system, thus creates 2 consecutive NIL in pred (with following Lasie)
@@ -260,9 +232,7 @@ class TestEvaluationResults(unittest.TestCase):
         With incorrectly divided NIL (hipe 2020):
         True: NIL, Q3300415, NIL, Q172161
         Pred: NIL, NIL, Q172161
-
         """
-
         true_path = "hipe_evaluation/tests/data/unittest-nel-2-true.tsv"
         pred_path = true_path.replace("-true", "-pred")
         eval_reference_path = pred_path + ".concatNIL_ref_results.json"
@@ -318,7 +288,7 @@ class TestEvaluationResults(unittest.TestCase):
             column_name="NEL-LIT",
             eval_type="nel",
             macro=False,
-            additional_cols=["NE-COARSE-LIT"]
+            additional_cols=["NE-COARSE-LIT"]  # when this param is not None it triggers another collect_link_objects
         )
 
     def _do_evaluation(
@@ -330,7 +300,7 @@ class TestEvaluationResults(unittest.TestCase):
         tags=None,
         merge_lines: bool = False,
         macro: bool = False,
-        additional_cols: list = None  # instantiate with list for EL based on ner columns
+        additional_cols: list = None  # for El link segmentation based on ner columns
     ):
         """Run evaluator and compare to reference data"""
 
@@ -344,47 +314,6 @@ class TestEvaluationResults(unittest.TestCase):
         eval_per_tag["ALL"] = eval_global
 
         self._compare_eval_results(eval_reference_path, eval_per_tag, incl_macro=macro)
-
-    def _test_eval_results_nel(self):
-        ref_path = "hipe_evaluation/tests/data/ref_results_nel_all.json"
-
-        eval_global, eval_per_tag = self.evaluator.evaluate(
-            "NEL-LIT", eval_type="nel", tags=None, merge_lines=True, n_best=3
-        )
-        eval_per_tag["ALL"] = eval_global
-
-        # with open("results_nel_all.json", "w") as jsonfile:
-        #     json.dump(
-        #         eval_per_tag, jsonfile, indent=4,
-        #     )
-
-        self._compare_eval_results(ref_path, eval_per_tag, True)
-
-    def _test_eval_results_nel_union(self):
-        ref_path = "hipe_evaluation/tests/data/ref_results_nel_all.json"
-
-        eval_global, eval_per_tag = self.evaluator.evaluate(
-            ["NEL-LIT", "NEL-METO"],
-            eval_type="nel",
-            tags=None,
-            merge_lines=True,
-            n_best=1,
-        )
-        eval_per_tag["ALL"] = eval_global
-
-        with open("results_nel_all.json", "w") as jsonfile:
-            json.dump(
-                eval_per_tag,
-                jsonfile,
-                indent=4,
-            )
-
-        self._compare_eval_results(ref_path, eval_per_tag, True)
-
-        #additional_cols=["NE-COARSE-LIT"]
-
-
-
 
     def _compare_eval_results(self, ref_path: str, tst, incl_macro: bool = True):
         # in case the ref_path does not exist already
@@ -406,7 +335,6 @@ class TestEvaluationResults(unittest.TestCase):
         with open(ref_path_sorted, "w") as ref_sorted:
             json.dump(ref, ref_sorted, sort_keys=True, indent=4)
 
-        # tst_path = ref_path.replace("ref_results.", "tst_results.")
         tst_path = ref_path.replace("ref_results.", "tst_results.")
         tst_path_sorted = tst_path
         if ref_path != tst_path:
@@ -421,7 +349,7 @@ class TestEvaluationResults(unittest.TestCase):
         for eval_type in ref:
             for label in ref[eval_type]:
                 for metric in ref[eval_type][label]:
-                    if not incl_macro and "macro" in metric:
+                    if not incl_macro and "macro" in metric:  # does not compare macro figures
                         continue
                     else:
                         self.assertAlmostEqual(

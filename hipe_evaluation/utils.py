@@ -110,7 +110,7 @@ def read_conll_annotations(fname, glueing_col_pairs=None, structure_only=False):
                 continue
             elif first_item.startswith("#"):
                 # segmenting lines
-                if first_item.startswith("# segment") and sent_annotations:  # TODO: no segment in HIPE2022, we need to use EndOfSentence
+                if first_item.startswith("# segment") and sent_annotations:  # TODO: segment is hipe2020 legacy, will be ignored
                     doc_annotations.append(sent_annotations)
                     sent_annotations = []
 
@@ -412,7 +412,6 @@ def collect_link_objects_ner(tokens, link_cols, ner_cols, n_best=1, gs=False):
                 union.append(Entity(tag, link.start_offset, link.end_offset, link.span_text))
 
             links_union.append(union)
-
     return links_union
 
 
@@ -504,5 +503,4 @@ def collect_link_objects_original(tokens, cols, n_best=1):
                 union.append(Entity(tag, link.start_offset, link.end_offset, link.span_text))
 
             links_union.append(union)
-
     return links_union

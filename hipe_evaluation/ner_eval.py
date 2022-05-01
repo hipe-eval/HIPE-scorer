@@ -707,7 +707,7 @@ def compute_actual_possible(results):
     results["actual"] = actual
     results["possible"] = possible
 
-    results["TP"] = correct  # TODO comment: TP/FP/FN values are actually not used to compute metrics (based on "correct" etc.)
+    results["TP"] = correct  # TODO comment: TP/FP/FN values are not used to compute metrics, only in reporting
     results["FP"] = actual - correct
     results["FN"] = possible - correct
 

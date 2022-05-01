@@ -60,7 +60,8 @@ NEL_COLUMNS_HIPE2022 = ["NEL-LIT"]
 
 HIPE_EDITIONS = ["HIPE-2020", "HIPE-2022"]
 
-def enforce_filename(fname: str):  # TODO: add equivalent for hipe 2022 and rename this one hipe 2020
+
+def enforce_filename(fname: str):
 
     try:
         f_obj = pathlib.Path(fname.lower())
@@ -75,8 +76,37 @@ def enforce_filename(fname: str):  # TODO: add equivalent for hipe 2022 and rena
 
     except (ValueError, AssertionError):
         msg = (
-            f"The filename of the system response '{fname}' needs to comply with the shared task requirements. "
+            f"The filename of the system response '{fname}' needs to comply with the HIPE 2020 shared task requirements. "
             + "Rename according to the following scheme: TEAMNAME_TASKBUNDLEID_LANG_RUNNUMBER.tsv"
+        )
+        logging.error(msg)
+        raise AssertionError(msg)
+
+    return submission, lang
+
+
+def enforce_filename_2022(fname: str):
+    """
+    Check if filename comply with the HIPE2022 convention:
+    TEAMNAME_TASKBUNDLEID_DATASETALIAS_LANG_RUNNUMBER.tsv
+    """
+    try:
+        f_obj = pathlib.Path(fname.lower())
+        submission = f_obj.stem
+        suffix = f_obj.suffix
+        team, bundle, dataset, lang, run_nb = submission.split("_")
+        bundle = int(bundle.lstrip("bundle"))
+
+        assert suffix == ".tsv"
+        assert bundle in range(1, 6)
+        assert dataset in ("ajmc", "newseye", "hipe2020", "topres19th", "sonar", "letemps")
+        assert lang in ("de", "fr", "en", "sv", "fi")
+        assert run_nb in range(1,3)
+
+    except (ValueError, AssertionError):
+        msg = (
+            f"The filename of the system response '{fname}' needs to comply with the HIPE 2022 shared task requirements. "
+            + "Rename according to the following scheme: TEAMNAME_TASKBUNDLEID_DATASETALIAS_LANG_RUNNUMBER.tsv"
         )
         logging.error(msg)
         raise AssertionError(msg)
@@ -92,7 +122,7 @@ def evaluation_wrapper(
     noise_levels: list = [None],
     time_periods: list = [None],
     tags: set = None,
-    additional_cols: list = None,  # TODO: clarify role of this
+    additional_cols: list = None,  # TODO: find a better name
 ):
     def recursive_defaultdict():
         return defaultdict(recursive_defaultdict)
@@ -150,10 +180,14 @@ def get_results(
 ):
 
     if not skip_check:
-        submission, lang = enforce_filename(f_pred)
+        if edition.upper() == "HIPE-2022":
+            submission, lang = enforce_filename(f_pred)
+        elif edition.upper() == "HIPE-2020":
+            submission, lang = enforce_filename_2022(f_pred)
+
     else:
         submission = f_pred
-        lang = "LANG"
+        lang = "LANG"  # TODO: rm (?) not used afterwards it seems.
 
     if glueing_cols:
         glueing_pairs = glueing_cols.split(",")
@@ -161,7 +195,7 @@ def get_results(
     else:
         glueing_col_pairs = None
 
-    if f_tagset:  # TODO: adapt for different tagsets (?)
+    if f_tagset:  # TODO: adapt for different tagsets (?) would be stricter.
         with open(f_tagset) as f_in:
             tagset = set(f_in.read().upper().splitlines())
     else:

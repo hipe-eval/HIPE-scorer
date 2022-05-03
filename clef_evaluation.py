@@ -405,13 +405,13 @@ def main(args):
     logging.basicConfig(
         filename=f_log,
         filemode="w",
-        level=logging.WARN,
+        level=logging.WARNING,
         format=f"%(asctime)s - %(levelname)s - {f_pred} - %(message)s",
     )
 
     # log errors also to console
     handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.ERROR)
+    handler.setLevel(logging.WARNING)
     logging.getLogger().addHandler(handler)
 
     if hipe_edition not in HIPE_EDITIONS:

@@ -7,7 +7,7 @@ The official evaluation module for the CLEF-HIPE-2020 shared task.
 
 
 import logging
-from collections import defaultdict
+from collections import defaultdict, Counter
 from copy import deepcopy
 from typing import Union, List
 import numpy as np
@@ -138,6 +138,8 @@ class Evaluator:
         sents_pred = []
         docs_pred = []
         tok_pos_start = 0
+        max_mismatch_reports_per_doc = 20
+        patched_pred_tokens_counter = Counter()
 
         for i_doc_true, docs_true in enumerate(self.true):
             for doc_true in docs_true:
@@ -147,13 +149,40 @@ class Evaluator:
                 toks_pred = [tok.TOKEN for tok in sent_pred]
                 toks_true = [tok.TOKEN for tok in doc_true]
                 if toks_true != toks_pred:
-                    msg = (
-                        f"The system response '{self.f_pred}' is not in line with the gold standard. "
-                        + "The attempt to reconstruct the segmentation failed. "
-                        + f"The mismatch occured in document {i_doc_true + 1} starting at token position {tok_pos_start +1} (Tokens: {toks_true}) wtr to the gold standard."
-                    )
-                    logging.error(msg)
-                    raise AssertionError
+                    logging.warning(f"Different tokens in GS ({len(toks_true)} tokens in total) and system output ({len(toks_pred)} tokens in total): ")
+                    if len(toks_true) == len(toks_pred):
+                        logging.warning(
+                            f"Given equal length documents, trying to patch system response tokens with GS tokens...")
+                        for i, tok_true in enumerate(toks_true):
+                            if tok_true != toks_pred[i]:
+                                patched_pred_tokens_counter[(toks_pred[i], tok_true)] += 1
+                                toks_pred[i] = tok_true
+                                if len(patched_pred_tokens_counter) > max_mismatch_reports_per_doc:
+                                    msg = (
+                                        f"Giving up now... Patched more than {max_mismatch_reports_per_doc} {patched_pred_tokens_counter} confusion pairs. "
+                                        f"The system response '{self.f_pred}' is not in line with the gold standard. \n"
+                                    )
+                                    logging.error(msg)
+                                    msg = f"More then {patched_pred_tokens_counter} token mismatches found. Giving up..."
+                                    assert False, msg
+
+                        logging.warning(f"Patched {sum(patched_pred_tokens_counter.values())} tokens: {patched_pred_tokens_counter}")
+                    else:
+                        current_mismatch_reports_per_doc = 0
+                        for i,tok_true in enumerate(toks_true):
+                            if tok_true != toks_pred[i]:
+
+                                msg = (
+                                    f"The system response '{self.f_pred}' is not in line with the gold standard. \n"
+                                    f"The mismatch occured in GS document {i_doc_true + 1} at token position {tok_pos_start + i}:\n"
+                                    f"   GS: {toks_true[i - 3:i + 4]}\n"
+                                    f"  SYS: {toks_pred[i - 3:i + 4]}\n"
+                                )
+                                logging.error(msg)
+                                current_mismatch_reports_per_doc += 1
+                                if current_mismatch_reports_per_doc > max_mismatch_reports_per_doc:
+                                    msg = f"More then {max_mismatch_reports_per_doc} token mismatches found. Giving up..."
+                                    assert False, msg
 
                 sents_pred.append(sent_pred)
                 tok_pos_start += n_doc_sent_true

@@ -404,7 +404,7 @@ def main(args):
     # log to file
     logging.basicConfig(
         filename=f_log,
-        filemode="a",
+        filemode="w",
         level=logging.WARN,
         format=f"%(asctime)s - %(levelname)s - {f_pred} - %(message)s",
     )

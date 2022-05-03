@@ -15,7 +15,7 @@ Usage:
 Options:
     -h --help               Show this screen.
     -t --task=<type>        Type of evaluation task (nerc_coarse, nerc_fine, nel).
-    -e --hipe_edition=<str> Specify the HIPE edition (triggers different set of columns to be considered during eval). Possible values: hipe-2020, hipe2022
+    -e --hipe_edition=<str> Specify the HIPE edition (triggers different set of columns to be considered during eval). Possible values: hipe-2020, hipe-2022 [default: hipe-2020]
     -r --ref=<fpath>        Path to gold standard file in CONLL-U-style format.
     -p --pred=<fpath>       Path to system prediction file in CONLL-U-style format.
     -o --outdir=<dir>       Path to output directory [default: .].
@@ -95,15 +95,17 @@ def enforce_filename_2022(fname: str):
         submission = f_obj.stem
         suffix = f_obj.suffix
         team, bundle, dataset, lang, run_nb = submission.split("_")
+        logging.info(f"team {team} bundle {bundle} dataset {dataset} lang {lang} run_nb {run_nb}")
         bundle = int(bundle.lstrip("bundle"))
 
-        assert suffix == ".tsv"
-        assert bundle in range(1, 6)
-        assert dataset in ("ajmc", "newseye", "hipe2020", "topres19th", "sonar", "letemps")
-        assert lang in ("de", "fr", "en", "sv", "fi")
-        assert run_nb in range(1,3)
+        assert suffix == ".tsv", f"Problem with file suffix {suffix}"
+        assert bundle in range(1, 6) , f"Problem with file bundle {bundle}"
+        assert dataset in {"ajmc", "newseye", "hipe2020", "topres19th", "sonar", "letemps"}, f"Problem with dataset {dataset}"
+        assert lang in {"de", "fr", "en", "sv", "fi"}, f"Problem with language {lang}"
+        assert int(run_nb) in range(1,3), f"Problem with run number {run_nb}"
 
-    except (ValueError, AssertionError):
+    except (ValueError, AssertionError) as e:
+        logging.error(e)
         msg = (
             f"The filename of the system response '{fname}' needs to comply with the HIPE 2022 shared task requirements. "
             + "Rename according to the following scheme: TEAMNAME_TASKBUNDLEID_DATASETALIAS_LANG_RUNNUMBER.tsv"
@@ -180,9 +182,9 @@ def get_results(
 ):
 
     if not skip_check:
-        if edition.upper() == "HIPE-2022":
+        if edition == "HIPE-2020":
             submission, lang = enforce_filename(f_pred)
-        elif edition.upper() == "HIPE-2020":
+        elif edition == "HIPE-2022":
             submission, lang = enforce_filename_2022(f_pred)
 
     else:
@@ -204,9 +206,9 @@ def get_results(
     evaluator = Evaluator(f_ref, f_pred, glueing_col_pairs)
 
     if task in ("nerc_fine", "nerc_coarse"):
-        if edition.upper() == "HIPE-2022":
+        if edition == "HIPE-2022":
             ner_columns = FINE_COLUMNS_HIPE2022 if task == "nerc_fine" else COARSE_COLUMNS_HIPE2022
-        elif edition.upper() == "HIPE-2020":
+        elif edition == "HIPE-2020":
             ner_columns = FINE_COLUMNS_HIPE2020 if task == "nerc_fine" else COARSE_COLUMNS_HIPE2020
 
         eval_stats = evaluation_wrapper(
@@ -224,12 +226,12 @@ def get_results(
         rows = []
         eval_stats = {}
 
-        nel_columns = NEL_COLUMNS_HIPE2020 if edition.upper() == "HIPE-2020" else NEL_COLUMNS_HIPE2022
+        nel_columns = NEL_COLUMNS_HIPE2020 if edition == "HIPE-2020" else NEL_COLUMNS_HIPE2022
 
         if original_nel:
             nel_additional_cols = None
         else:
-            nel_additional_cols = COARSE_COLUMNS_HIPE2020 if edition.upper() == "HIPE-2020" else COARSE_COLUMNS_HIPE2022
+            nel_additional_cols = COARSE_COLUMNS_HIPE2020 if edition == "HIPE-2020" else COARSE_COLUMNS_HIPE2022
 
         for n in n_best:
             eval_stats[n] = evaluation_wrapper(
@@ -387,7 +389,7 @@ def main(args):
     f_ref = args["--ref"]
     f_pred = args["--pred"]
     outdir = args["--outdir"]
-    hipe_edition = args["--hipe_edition"]
+    hipe_edition = args["--hipe_edition"].upper()  # mandatory option
     f_log = args["--log"]
     task = args["--task"]
     original_nel = args["--original_nel"]
@@ -412,9 +414,9 @@ def main(args):
     handler.setLevel(logging.ERROR)
     logging.getLogger().addHandler(handler)
 
-    if hipe_edition.upper() not in HIPE_EDITIONS:
+    if hipe_edition not in HIPE_EDITIONS:
         msg = f"Hipe edition was not or incorrectly set. Use --hipe_edition=hipe-2022 or --hipe_edition=hipe-2022. '"
-        print(msg)
+        logging.error(msg)
         sys.exit(1)
 
     if n_best:
@@ -476,8 +478,8 @@ if __name__ == "__main__":
 
     tasks = ("nerc_coarse", "nerc_fine", "nel")
     if args["--task"] not in tasks:
-        msg = "\nPlease restrict to one of the available evaluation tasks: " + ", ".join(tasks)
-        print(msg)
+        msg = "Please restrict to one of the available evaluation tasks: " + ", ".join(tasks)
+        logging.error(msg)
         sys.exit(1)
 
     main(args)

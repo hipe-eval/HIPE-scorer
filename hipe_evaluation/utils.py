@@ -115,7 +115,7 @@ def read_conll_annotations(fname, glueing_col_pairs=None, structure_only=False):
                     sent_annotations = []
 
                 # segmenting documents
-                elif (first_item.startswith("# document") or first_item.startswith("# hipe2022:docuemnt_id")) and sent_annotations:
+                elif (first_item.startswith("# document") or first_item.startswith("# hipe2022:document_id")) and sent_annotations:
                     doc_annotations.append(sent_annotations)
                     annotations.append(doc_annotations)
                     sent_annotations = []

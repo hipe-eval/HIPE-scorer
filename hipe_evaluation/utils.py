@@ -122,7 +122,11 @@ def read_conll_annotations(fname, glueing_col_pairs=None, structure_only=False):
                     doc_annotations = []
 
                 elif (first_item.startswith("# date") or first_item.startswith("# hipe2022:date")):
-                    datestring = re.search(r"\d{4}-\d{2}-\d{2}", first_item).group(0)
+                    m = re.search(r"\d{4}-\d{2}-\d{2}", first_item)
+                    if m:
+                        datestring = m.group(0)
+                    else:
+                        datestring = "2022-01-01"
                     date = datetime.strptime(datestring, "%Y-%m-%d")
 
                 # other lines starting with # are dismissed

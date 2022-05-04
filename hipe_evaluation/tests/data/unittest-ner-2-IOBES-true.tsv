@@ -1,0 +1,44 @@
+TOKEN	NE-COARSE-LIT	NE-COARSE-METO	NE-FINE-LIT	NE-FINE-METO	NE-FINE-COMP	NE-NESTED	NEL-LIT	NEL-METO	MISC
+# hipe2022:document_id = EXP-1888-08-03-a-i0030
+# hipe2022:date = 1888-08-03
+# hipe2022:language = fr
+# hipe2022:document_type = newspaper
+# hipe2022:dataset = hipe2020
+# hipe2022:original_source = v1.4.1/fr/HIPE-data-v1.4.1-dev-fr.tsv
+# hipe2022:applicable_columns = TOKEN NE-COARSE-LIT NE-COARSE-METO NE-FINE-LIT NE-FINE-METO NE-FINE-COMP NE-NESTED NEL-LIT NEL-METO MISC
+# hipe2020:doi = https://zenodo.org/record/6046853
+# hipe2020:version = v1.4
+# hipe2020:original_license = CC-BY-NC-SA 4.0
+# hipe2020:publication_title = EXP
+La	O	O	O	O	O	O	_	_	_
+panique	O	O	O	O	O	O	_	_	_
+des	O	O	O	O	O	O	_	_	_
+éléphants	O	O	O	O	O	O	_	_	_
+au	O	O	O	O	O	O	_	_	_
+cortège	O	O	O	O	O	O	_	_	_
+dc	O	O	O	O	O	O	_	_	_
+Munich	S-loc	O	S-loc.adm.town	O	O	O	Q1726	_	NoSpaceAfter
+.	O	O	O	O	O	O	_	_	EndOfSentence
+—	O	O	O	O	O	O	_	_	_
+Quatre	O	O	O	O	O	O	_	_	_
+dromadaires	O	O	O	O	O	O	_	_	EndOfLine
+fournis	O	O	O	O	O	O	_	_	_
+par	O	O	O	O	O	O	_	_	_
+M	B-pers	O	B-pers.ind	O	B-comp.title	O	Q65264	_	NoSpaceAfter
+.	I-pers	O	I-pers.ind	O	I-comp.title	O	Q65264	_	EndOfLine
+Hagenbeck	I-pers	O	I-pers.ind	O	B-comp.name	O	Q65264	_	NoSpaceAfter
+,	I-pers	O	I-pers.ind	O	O	O	Q65264	_	_
+le	I-pers	O	I-pers.ind	O	O	O	Q65264	_	_
+célèbre	I-pers	O	I-pers.ind	O	B-comp.function	O	Q65264	_	_
+marchand	I-pers	O	I-pers.ind	O	I-comp.function	O	Q65264	_	_
+d	I-pers	O	I-pers.ind	O	I-comp.function	O	Q65264	_	NoSpaceAfter
+'	I-pers	O	I-pers.ind	O	I-comp.function	O	Q65264	_	NoSpaceAfter
+animaux	I-pers	O	I-pers.ind	O	I-comp.function	O	Q65264	_	EndOfLine
+de	I-pers	O	I-pers.ind	O	I-comp.function	O	Q65264	_	_
+Hambourg	E-pers	O	E-pers.ind	O	E-comp.function	B-loc.adm.town	Q65264	_	NoSpaceAfter
+,	O	O	O	O	O	O	_	_	_
+faisaient	O	O	O	O	O	O	_	_	_
+partie	O	O	O	O	O	O	_	_	_
+du	O	O	O	O	O	O	_	_	_
+groupe	O	O	O	O	O	O	_	_	_
+.	O	O	O	O	O	O	_	_	EndOfSentence

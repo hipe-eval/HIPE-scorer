@@ -150,13 +150,18 @@ def read_conll_annotations(fname, glueing_col_pairs=None, structure_only=False):
 
                 # when a TSV line contains less columns than expected (as per `fieldnames`)
                 # the CSV reader will convert the missing values into None, without raising any error
+                # SC: Or a '' that would also evaluate to False
+
+                # if MISC is None, we can patch # hotfix for topres19th
+                if not row["MISC"]:
+                    row["MISC"] = "_"
                 non_none_values = [value for value in row.values() if value]
                 try:
                     assert len(fieldnames) == len(non_none_values)
                 except AssertionError:
                     msg = (
                         f"File {fname} contains {len(non_none_values)} values where {len(fieldnames)} are expected"
-                        + f"\nThe faulty row has TOKEN column = {row['TOKEN']}"
+                        + f"\nThe faulty row {row} has TOKEN column = {row['TOKEN']}"
                     )
                     logging.error(msg)
                     raise AssertionError(msg)

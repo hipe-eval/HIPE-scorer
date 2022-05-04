@@ -82,6 +82,23 @@ def check_spurious_tags(tags_true: set, tags_pred: set, columns: list):
             logging.warning(msg)
 
 
+def convert_iobes_to_iob(row):
+    """Convert IOBES tags into IOB in-place on the fly
+
+    S-TAG => B-TAG
+    E-TAG => I-TAG
+
+    Relevant keys:
+    TOKEN	*NE-COARSE-LIT	*NE-COARSE-METO	*NE-FINE-LIT	*NE-FINE-METO	*NE-FINE-COMP	*NE-NESTED	NEL-LIT	NEL-METO	MISC
+    """
+    for k in row:
+        if k.startswith('NE-'):
+            if row[k].startswith("S-"):
+                row[k] = "B"+row[k][1:]
+            if row[k].startswith("E-"):
+                row[k] = "I"+row[k][1:]
+
+
 def read_conll_annotations(fname, glueing_col_pairs=None, structure_only=False):
     """
     Read the token annotations from a tsv file (HIPE IOB tsv format).
@@ -132,7 +149,7 @@ def read_conll_annotations(fname, glueing_col_pairs=None, structure_only=False):
                 # other lines starting with # are dismissed
 
             else:
-
+                convert_iobes_to_iob(row)
                 # discard annotation and keep only structure
                 if structure_only:
                     token = row[fieldnames[0]]
@@ -160,7 +177,7 @@ def read_conll_annotations(fname, glueing_col_pairs=None, structure_only=False):
                     )
                     logging.error(msg)
                     raise AssertionError(msg)
-                
+
                 try:
                     # parse Levenshtein distance from MISC column if possible
                     row["LEVENSHTEIN"] = float(re.search(r"LED(\d+(\.\d+)?)", row["MISC"]).group(1))

@@ -6,6 +6,7 @@ comp.name
 comp.qualifier
 comp.title
 date
+humanprod
 loc
 loc.add
 loc.add.elec

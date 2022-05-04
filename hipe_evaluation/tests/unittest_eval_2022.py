@@ -87,6 +87,33 @@ class TestEvaluationResults(unittest.TestCase):
             macro=False,
         )
 
+    def test_ner_lit_2_coarse_iobes(self):
+        """ NER Test 2:
+        NE-COARSE-LIT: 2 entity in gold, 2 in system response.
+        (cf. scenario I)
+        """
+        true_path = "hipe_evaluation/tests/data/unittest-ner-2-IOBES-true.tsv"
+        pred_path = true_path.replace("-true", "-pred")
+        eval_reference_path = pred_path + ".coarse-lit_ref_results.json"
+        evaluator: Evaluator = Evaluator(
+            true_path,
+            pred_path,
+        )
+        self.assertEqual(evaluator.n_docs_true, 1, "Not all documents were parsed")
+        self.assertEqual(evaluator.n_lines_true, 1, "Not all layout lines were parsed")
+        self.assertEqual(evaluator.n_toks_true, 32, "Not all tokens were parsed")
+
+        self._do_evaluation(
+            evaluator,
+            eval_reference_path,
+            column_name="NE-COARSE-LIT",
+            eval_type="nerc",
+            macro=False,
+        )
+
+
+
+
     def test_ner_lit_2_nested(self):
         """ NER Test 2:
         NE-NESTED: 1 entity in gold (Hambourg as loc.adm.town), 0 in system response.

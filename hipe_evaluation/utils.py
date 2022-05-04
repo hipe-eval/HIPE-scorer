@@ -148,6 +148,19 @@ def read_conll_annotations(fname, glueing_col_pairs=None, structure_only=False):
                             new_col_2_label = f"{col_2_iob}-{col_1_label}.{col_2_label}"
                             row[col_2] = new_col_2_label
 
+                # when a TSV line contains less columns than expected (as per `fieldnames`)
+                # the CSV reader will convert the missing values into None, without raising any error
+                non_none_values = [value for value in row.values() if value]
+                try:
+                    assert len(fieldnames) == len(non_none_values)
+                except AssertionError:
+                    msg = (
+                        f"File {fname} contains {len(non_none_values)} values where {len(fieldnames)} are expected"
+                        + f"\nThe faulty row has TOKEN column = {row['TOKEN']}"
+                    )
+                    logging.error(msg)
+                    raise AssertionError(msg)
+                
                 try:
                     # parse Levenshtein distance from MISC column if possible
                     row["LEVENSHTEIN"] = float(re.search(r"LED(\d+(\.\d+)?)", row["MISC"]).group(1))

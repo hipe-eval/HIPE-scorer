@@ -424,9 +424,10 @@ def main(args):
     else:
         n_best = [1]
 
-    if noise_level and noise_level != [None]:
-        noise_levels = [level.split("-") for level in noise_level.split(",")]
-        assert float(noise_levels[0][0]) ,f"found invalid noise level argument {noise_level}"
+    if noise_level:
+        noise_levels = [level.split("-") for level in noise_level.split(",") if level]
+        logging.warning(f"noise_level `{noise_level}` noise_levels {noise_levels}")
+        assert len(noise_levels[0]) == 2 ,f"found invalid noise level argument {noise_level} leading to {noise_levels}"
         noise_levels = [tuple([float(lower), float(upper)]) for lower, upper in noise_levels]
 
         # add case to evaluate on all entities regardless of noise
@@ -482,5 +483,5 @@ if __name__ == "__main__":
         msg = "Please restrict to one of the available evaluation tasks: " + ", ".join(tasks)
         logging.error(msg)
         sys.exit(1)
-    logging.info(f"ARGUMENTS {args}")
+    logging.debug(f"ARGUMENTS {args}")
     main(args)

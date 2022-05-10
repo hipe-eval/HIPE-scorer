@@ -91,12 +91,18 @@ def convert_iobes_to_iob(row):
     Relevant keys:
     TOKEN	*NE-COARSE-LIT	*NE-COARSE-METO	*NE-FINE-LIT	*NE-FINE-METO	*NE-FINE-COMP	*NE-NESTED	NEL-LIT	NEL-METO	MISC
     """
+    s_tags = 0
+    e_tags = 0
+
     for k in row:
         if k.startswith('NE-'):
             if row[k].startswith("S-"):
-                row[k] = "B"+row[k][1:]
+                row[k] = "B" + row[k][1:]
+                s_tags += 1
             if row[k].startswith("E-"):
-                row[k] = "I"+row[k][1:]
+                row[k] = "I" + row[k][1:]
+                e_tags += 1
+    return s_tags, e_tags
 
 
 def read_conll_annotations(fname, glueing_col_pairs=None, structure_only=False):
@@ -113,6 +119,8 @@ def read_conll_annotations(fname, glueing_col_pairs=None, structure_only=False):
     annotations = []
     sent_annotations = []
     doc_annotations = []
+    all_s_tags = 0
+    all_e_tags = 0
 
     date = None
 
@@ -149,7 +157,9 @@ def read_conll_annotations(fname, glueing_col_pairs=None, structure_only=False):
                 # other lines starting with # are dismissed
 
             else:
-                convert_iobes_to_iob(row)
+                s_tags, e_tags = convert_iobes_to_iob(row)
+                all_s_tags += s_tags
+                all_e_tags += e_tags
                 # discard annotation and keep only structure
                 if structure_only:
                     token = row[fieldnames[0]]
@@ -201,13 +211,13 @@ def read_conll_annotations(fname, glueing_col_pairs=None, structure_only=False):
         doc_annotations.append(sent_annotations)
         annotations.append(doc_annotations)
 
+    logging.warning(f"Converted {all_s_tags} S-tags and {all_e_tags} E-tags.")
     return annotations
 
 
 def filter_entities_by_noise(
     true: list, pred: list, noise_lower: float, noise_upper: float
 ) -> tuple:
-
     """
     Filter to keep any tokens with a LEVENSHTEIN distance within particular range.
     If not given, the tokens are kept as well.
@@ -222,7 +232,6 @@ def filter_entities_by_noise(
             or noise_lower <= tok_true.LEVENSHTEIN < noise_upper
             or noise_lower == tok_true.LEVENSHTEIN == noise_upper
         ):
-
             filtered_true.append(tok_true)
             filtered_pred.append(tok_pred)
 
@@ -234,7 +243,6 @@ def filter_entities_by_noise(
 def filter_entities_by_date(
     true: list, pred: list, date_start: datetime, date_end: datetime
 ) -> tuple:
-
     """
     Filter to keep any tokens of a particular period of time
     """
@@ -244,7 +252,6 @@ def filter_entities_by_date(
 
     for tok_true, tok_pred in zip(true, pred):
         if date_start <= tok_true.DATE < date_end:
-
             filtered_true.append(tok_true)
             filtered_pred.append(tok_pred)
 

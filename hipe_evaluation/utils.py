@@ -211,7 +211,8 @@ def read_conll_annotations(fname, glueing_col_pairs=None, structure_only=False):
         doc_annotations.append(sent_annotations)
         annotations.append(doc_annotations)
 
-    logging.warning(f"Converted {all_s_tags} S-tags and {all_e_tags} E-tags.")
+    if all_s_tags+all_e_tags > 0:
+        logging.warning(f"Converted {all_s_tags} S-tags and {all_e_tags} E-tags.")
     return annotations
 
 

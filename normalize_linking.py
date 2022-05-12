@@ -5,7 +5,7 @@
 Normalize entity linking by remapping links according to an external file
 
 Usage:
-    normalize_linking.py -i=<fpath> -o=<fpath> [--norm-time (--norm-histo --map=<fpath>) --union-meto-lit]
+    normalize_linking.py -i=<fpath> -o=<fpath> [--norm-time (--norm-histo --map=<fpath>) --union-meto-lit] [--hipe_edition=<str>]
     normalize_linking.py -h | --help
 
 Options:
@@ -16,6 +16,8 @@ Options:
     --norm-time             Normalize NEL for time mentions by linking to NIL.
     --norm-histo            Normalize NEL for historical entities
     --union-meto-lit        Unionize literal and metonymic columns (apply on both columns).
+    -e --hipe_edition=<str> Specify the HIPE edition. Ignores METO columns if set to hipe-2022.  Possible values: hipe-2020, hipe-2022 [default: hipe-2020]
+
 
 All file path can be local or remote URLs.
 
@@ -26,6 +28,7 @@ import itertools
 import pandas as pd
 from docopt import docopt
 
+HIPE_EDITIONS = ["HIPE-2020", "HIPE-2022"]
 
 def get_mappings(f_map):
     df_mapping = pd.read_csv(f_map, delimiter="\t")
@@ -120,10 +123,11 @@ def unionize_meto_lit(df: pd.DataFrame):
     return df
 
 
-def remove_time_linking(df, replacement="NIL"):
+def remove_time_linking(df, replacement="NIL",map_meto=True):
     try:
         df.loc[df["NE-COARSE-LIT"].str.contains("time"), "NEL-LIT"] = replacement
-        df.loc[df["NE-COARSE-LIT"].str.contains("time"), "NEL-METO"] = replacement
+        if map_meto:
+            df.loc[df["NE-COARSE-LIT"].str.contains("time"), "NEL-METO"] = replacement
     except KeyError:
         pass
 
@@ -138,6 +142,12 @@ def main(args):
     norm_time = args["--norm-time"]
     norm_histo = args["--norm-histo"]
     unionize = args["--union-meto-lit"]
+    hipe_edition = args["--hipe_edition"].upper()  # mandatory option
+
+    if hipe_edition not in HIPE_EDITIONS:
+        msg = f"Hipe edition was not or incorrectly set. Use --hipe_edition=hipe-2022 or --hipe_edition=hipe-2022. '"
+        logging.error(msg)
+        sys.exit(1)
 
     df = pd.read_csv(f_in, sep="\t", quoting=csv.QUOTE_NONE, quotechar="", skip_blank_lines=False)
     df = df.fillna(value={"NE-COARSE-LIT": "", "NEL-LIT": "", "NEL-METO": ""})
@@ -147,7 +157,7 @@ def main(args):
         df = normalize_n_to_n(df, mappings)
 
     if norm_time:
-        df = remove_time_linking(df)
+        df = remove_time_linking(df,map_meto=hipe_edition == 'HIPE-2020')
 
     if unionize:
         df = unionize_meto_lit(df)

@@ -401,17 +401,18 @@ def main(args):
     f_tagset = args["--tagset"]
     suffix = args["--suffix"]
 
-    # log to file
-    logging.basicConfig(
-        filename=f_log,
-        filemode="w",
-        level=logging.WARNING,
-        format=f"%(asctime)s - %(levelname)s - {f_pred} - %(message)s",
-    )
+    log_fmt = f"%(asctime)s - %(levelname)s - {f_pred} - %(message)s"
+    logging.basicConfig(fmt=log_fmt)
+    # log warnings to file
+    handler1 = logging.FileHandler(f_log,mode="w")
+    handler1.setLevel(logging.WARNING)
+    handler1.setFormatter(logging.Formatter(fmt=log_fmt))
+    logging.getLogger().addHandler(handler1)
 
     # log errors also to console
     handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(logging.WARNING)
+    handler.setFormatter(logging.Formatter(fmt=log_fmt))
     logging.getLogger().addHandler(handler)
 
     if hipe_edition not in HIPE_EDITIONS:

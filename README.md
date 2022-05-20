@@ -1,7 +1,24 @@
-README.md
 # HIPE-scorer 
 
-The HIPE-scorer is a python module for evaluating Named Entity Recognition and Classification (NER) and Entity Linking (EL) systems, developed and used for the HIPE shared tasks on NE processing in historical documents (see [CLEF-HIPE-2020](https://impresso.github.io/CLEF-HIPE-2020//) and [HIPE-2022](https://hipe-eval.github.io/HIPE-2022/)).
+The HIPE-scorer is a python module for **evaluating Named Entity Recognition and Classification (NER) and Entity Linking (EL) systems**.    
+
+It has been developed and used in the context of the HIPE ('Identifying Historical People, Places and other Entities') shared tasks on NE processing on **historical documents**, with:    
+- **HIPE-2020**: see the task [website](https://hipe-eval.github.io/HIPE-2022/), the [data](https://github.com/hipe-eval/HIPE-2022-data/blob/main/README.md), and the [evaluation campaign toolkit](https://github.com/hipe-eval/HIPE-2022-eval);
+- **CLEF-HIPE-2020**: see the task [website](https://impresso.github.io/CLEF-HIPE-2020/), the [data](https://github.com/impresso/CLEF-HIPE-2020/tree/master/data), and the [evaluation campaign toolkit](https://github.com/impresso/CLEF-HIPE-2020-eval);
+
+#### Release history
+- 23 May 2020: [v2.0](), scorer as used during the HIPE-2022 evaluation (May 2022).
+- 05 Jun 2020: [v1.1](https://github.com/hipe-eval/HIPE-scorer/releases/tag/1.1), post-HIPE-2020 evaluation release.
+- 03 Jun 2020: [v1.0](https://github.com/hipe-eval/HIPE-scorer/releases/tag/1.0), scorer as used during the CLEF-HIPE-2020 evaluation (May 2020).
+- 20 Feb 2020: [v0.9](https://github.com/hipe-eval/HIPE-scorer/releases/tag/v0.9), first release.
+
+
+
+[Main functionalities](#main-functionalities)    
+[Installation](#installation)  
+[CLI usage](#cli-usage)  
+[Forthcoming](Forthcoming)
+[License](license)
 
 ## Main functionalities
 

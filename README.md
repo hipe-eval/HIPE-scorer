@@ -17,7 +17,7 @@ It has been developed and used in the context of the HIPE ('Identifying Historic
 [Main functionalities](#main-functionalities)    
 [Installation](#installation)  
 [CLI usage](#cli-usage)  
-[Forthcoming](Forthcoming)
+[Forthcoming](Forthcoming)    
 [License](license)
 
 ## Main functionalities
@@ -153,12 +153,15 @@ Evaluation regimes (according to the script's internal naming):
 - read the doc
 - scorer call via a function
 
-## Release history
+## Contributors
 
-- **v2.0**: post-HIPE2022 release (version used for the May 2022 evaluation)     
-- **v1.1**, June 2020: post-HIPE-2020 evaluation release
-- **v1.0**, June 2020: version of the scorer as used during the CLEF-HIPE-2020 evaluation period
-- **v0.9**, Feb 2020,: first release of the HIPE scorer developed by Alex Flückiger, based on David Batista's [NER-Evaluation module](https://github.com/davidsbatista/NER-Evaluation) (see also his [blog post](http://www.davidsbatista.net/blog/2018/05/09/Named_Entity_Evaluation/) on the topic).
+The very first version of the HIPE scorer was inspired from David Batista's [NER-Evaluation module](https://github.com/davidsbatista/NER-Evaluation) (see also this [blog post](http://www.davidsbatista.net/blog/2018/05/09/Named_Entity_Evaluation/)).
+
+- Alex Fluckiger (first version for CLEF-HIPE-2020)
+- Simon Clematide (maintainance and developement for HIPE 2022)
+- Maud Ehrmann (maintainance and developement for HIPE 2022)
+- Matteo Romanello (maintainance and developement for HIPE 2022)
+- [Adrián creat89](https://github.com/creat89]) fixed the problem of consecutive NIL boundaries in this [PR](https://github.com/hipe-eval/HIPE-scorer/pull/17)
 
 
 ## License

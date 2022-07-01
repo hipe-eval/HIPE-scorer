@@ -1,0 +1,41 @@
+TOKEN	NE-COARSE-LIT	NE-COARSE-METO	NE-FINE-LIT	NE-FINE-METO	NE-FINE-COMP	NE-NESTED	NEL-LIT	NEL-METO	MISC
+#	hipe2022:document_id	=	EXP-1888-01-09-a-i0035
+#	hipe2022:date	=	1888-01-09
+#	hipe2022:language	=	fr
+#	hipe2022:document_type	=	newspaper
+#	hipe2022:dataset	=	hipe2020
+#	hipe2022:original_source	=	v1.4.1/fr/HIPE-data-v1.4.1-train-fr.tsv
+#	hipe2022:applicable_columns	=	TOKEN	NE-COARSE-LIT	NE-COARSE-METO	NE-FINE-LIT	NE-FINE-METO	NE-FINE-COMP	NE-NESTED	NEL-LIT	NEL-METO	MISC
+#	hipe2020:doi	=	https://zenodo.org/record/6046853
+#	hipe2020:version	=	v1.4
+#	NOTE:	completely	artificial	example	with	NIL	consecutive	entities	in	pred
+T1	B-pers	O	O	O	O	O	Q2	_	_
+T2	I-pers	O	O	O	O	O	Q2	_	_
+T3	O	O	O	O	O	O	_	_	EndOfLine
+T4	O	O	O	O	O	O	_	_	_
+T5	B-loc	O	B-pers.ind	O	B-comp.title	O	Q5	_	NoSpaceAfter
+T6	I-loc	O	I-pers.ind	O	I-comp.title	O	Q5	_	_
+T7	I-loc	O	I-pers.ind	O	B-comp.name	O	Q5	_	NoSpaceAfter
+.	O	O	O	O	O	O	_	_	EndOfLine|EndOfSentence
+T8	B-pers	O	O	O	O	O	Q2	_	_
+T9	I-pers	O	B-pers.ind	O	B-comp.title	O	Q2	_	NoSpaceAfter
+T10	I-pers	O	I-pers.ind	O	I-comp.title	O	Q2	_	_
+T11	I-pers	O	I-pers.ind	O	B-comp.name	O	Q2	_	NoSpaceAfter
+,	O	O	I-pers.ind	O	O	O	_	_	_
+T12	B-pers	O	I-pers.ind	O	B-comp.function	O	NIL	_	_
+T13	I-pers	O	I-pers.ind	O	I-comp.function	O	NIL	_	_
+T14	I-pers	O	I-pers.ind	O	I-comp.function	O	NIL	_	_
+T15	O	O	I-pers.ind	O	I-comp.function	O	_	_	EndOfLine
+T16	O	O	I-pers.ind	O	I-comp.function	O	_	_	_
+T17	B-pers	O	I-pers.ind	O	I-comp.function	O	Q4	_	NoSpaceAfter
+T18	I-pers	O	I-pers.ind	O	I-comp.function	O	Q4	_	NoSpaceAfter
+T19	I-pers	O	I-pers.ind	O	I-comp.function	O	Q4	_	NoSpaceAfter
+T20	B-pers	O	B-pers.ind	O	B-comp.title	O	NIL	_	NoSpaceAfter
+.	I-pers	O	I-pers.ind	O	I-comp.title	O	NIL	_	EndOfLine
+T21	I-pers	O	I-pers.ind	O	B-comp.name	O	NIL	_	_
+T22	B-pers	O	B-pers.ind	O	B-comp.title	O	Q5	_	_
+T23	I-pers	O	I-pers.ind	O	B-comp.name	O	Q5	_	_
+T24	O	O	O	O	O	O	_	_	_
+T25	O	O	O	O	O	O	_	_	_
+T26	O	O	O	O	O	O	_	_	EndOfLine
+T27	O	O	O	O	O	O	_	_	_

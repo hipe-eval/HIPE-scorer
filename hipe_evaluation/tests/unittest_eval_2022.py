@@ -317,7 +317,55 @@ class TestEvaluationResults(unittest.TestCase):
             macro=False,
             additional_cols=["NE-COARSE-LIT"]  # when this param is not None it triggers another collect_link_objects
         )
+    def test_nel_3(self):
+        """ NEL Test 3
+        Testing the evaluation of NIL vs non-NIL
+        Details:
+        -
+        """
+        true_path = "hipe_evaluation/tests/data/unittest-nel-3-true.tsv"
+        pred_path = true_path.replace("-true", "-pred")
+        eval_reference_path = pred_path + ".ref_results.json"
+        evaluator: Evaluator = Evaluator(
+            true_path,
+            pred_path,
+        )
+        # self.assertEqual(evaluator.n_docs_true, 1, "Not all documents were parsed")
+        # self.assertEqual(evaluator.n_lines_true, 1, "Not all layout lines were parsed")
+        # self.assertEqual(evaluator.n_toks_true, 37, "Not all tokens were parsed")
 
+        self._do_evaluation(
+            evaluator,
+            eval_reference_path,
+            column_name="NEL-LIT",
+            eval_type="nel",
+            macro=False
+        )
+
+    def test_nel_4(self):
+        """ NEL Test 4
+        Testing the evaluation of NIL vs non-NIL
+        Details:
+        -
+        """
+        true_path = "hipe_evaluation/tests/data/unittest-nel-4-true.tsv"
+        pred_path = true_path.replace("-true", "-pred")
+        eval_reference_path = pred_path + ".ref_results.json"
+        evaluator: Evaluator = Evaluator(
+            true_path,
+            pred_path,
+        )
+        # self.assertEqual(evaluator.n_docs_true, 1, "Not all documents were parsed")
+        # self.assertEqual(evaluator.n_lines_true, 1, "Not all layout lines were parsed")
+        # self.assertEqual(evaluator.n_toks_true, 37, "Not all tokens were parsed")
+
+        self._do_evaluation(
+            evaluator,
+            eval_reference_path,
+            column_name="NEL-LIT",
+            eval_type="nel",
+            macro=False
+        )
     def _do_evaluation(
         self,
         evaluator: Evaluator,

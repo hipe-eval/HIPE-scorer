@@ -1,0 +1,12 @@
+TOKEN	NE-COARSE-LIT	NE-COARSE-METO	NE-FINE-LIT	NE-FINE-METO	NE-FINE-COMP	NE-NESTED	NEL-LIT	NEL-METO	MISC
+# hipe2022:document_id = EXP-1888-01-09-a-i0035
+# NOTE: completely artificial example with NON NIL consecutive entities in gold
+T1	B-pers	O	O	O	O	O	Q1	_	_
+T2	B-pers	O	O	O	O	O	Q2	_	_
+T3	B-pers	O	O	O	O	O	NIL	_	EndOfLine|EndOfSent
+T1	B-pers	O	O	O	O	O	Q1	_	_
+T2	B-pers	O	O	O	O	O	Q2	_	_
+T3	B-pers	O	O	O	O	O	NIL	_	EndOfLine|EndOfSent
+T1	B-pers	O	O	O	O	O	Q1	_	_
+T2	B-pers	O	O	O	O	O	Q2	_	_
+T3	B-pers	O	O	O	O	O	NIL	_	EndOfLine|EndOfSent

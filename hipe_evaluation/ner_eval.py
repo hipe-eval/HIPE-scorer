@@ -117,10 +117,11 @@ class Evaluator:
         logging.info(f"Number of docs: {self.n_docs_true}\t{self.n_docs_pred}")
         logging.info(f"Number of lines: {self.n_lines_true}\t{self.n_lines_pred}")
         logging.info(f"Number of tokens: {self.n_toks_true}\t{self.n_toks_pred}")
-
+        print('true:', len(self.true), 'pred:', len(self.pred))
         data_format_true = [[len(line) for line in doc] for doc in self.true]
         data_format_pred = [[len(line) for line in doc] for doc in self.pred]
-
+        print('data_format_true', data_format_true)
+        print('data_format_pred', data_format_pred)
         try:
             assert data_format_true == data_format_pred
         except AssertionError:
@@ -148,6 +149,7 @@ class Evaluator:
                 sent_pred = self.pred[0][0][tok_pos_start:tok_pos_end]
                 toks_pred = [tok.TOKEN for tok in sent_pred]
                 toks_true = [tok.TOKEN for tok in doc_true]
+                print(len(toks_true), len(toks_pred), tok_pos_start)
                 if toks_true != toks_pred:
                     logging.warning(f"Different tokens in GS ({len(toks_true)} tokens in total) and system output ({len(toks_pred)} tokens in total): ")
                     if len(toks_true) == len(toks_pred):
@@ -155,6 +157,7 @@ class Evaluator:
                             f"Given equal length documents, trying to patch system response tokens with GS tokens...")
                         for i, tok_true in enumerate(toks_true):
                             if tok_true != toks_pred[i]:
+                                print(tok_true, toks_pred[i])
                                 patched_pred_tokens_counter[(toks_pred[i], tok_true)] += 1
                                 toks_pred[i] = tok_true
                                 if len(patched_pred_tokens_counter) > max_mismatch_reports_per_doc:
@@ -169,7 +172,8 @@ class Evaluator:
                         logging.warning(f"Patched {sum(patched_pred_tokens_counter.values())} tokens: {patched_pred_tokens_counter}")
                     else:
                         current_mismatch_reports_per_doc = 0
-                        for i,tok_true in enumerate(toks_true):
+                        for i, tok_true in enumerate(toks_true):
+                            print(tok_true, '-->', toks_pred[i])
                             if tok_true != toks_pred[i]:
 
                                 msg = (

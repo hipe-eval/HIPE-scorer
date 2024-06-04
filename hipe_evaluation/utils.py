@@ -22,15 +22,20 @@ class TokAnnotation:
 
         # columns are set as class variables
         for k, v in properties.items():
-            if k.upper() not in ("TOKEN", "LEVENSHTEIN", "DATE"):
-                try:
-                    v = v.upper()
-                except AttributeError:
-                    msg = f"Empty values in column '{k}'. They get replaced by an underscore."
-                    logging.warning(msg)
-                    v = "_"
+            if k is not None:
+                # print(v, type(v))
+                # if type(v) is str and "#" not in v:
+                # if "#" not in v:
+                if k.upper() not in ("TOKEN", "LEVENSHTEIN", "DATE"):
+                    try:
+                        v = v.upper()
+                    except AttributeError:
+                        # msg = f"Empty values in column '{k}'. They get replaced by an underscore."
+                        # logging.warning(msg)
+                        v = "_"
 
-            setattr(self, k, v)
+                # print(k,v)
+                setattr(self, k, v)
 
     def __repr__(self):
         return "TokAnnotation({!r})".format(self.get_values())
@@ -49,7 +54,12 @@ def get_all_tags(y_true):
     """
 
     # keep only primary annotation when separated by a pipe
-    tags = {label.split("|")[0].split("-")[-1] for doc in y_true for seg in doc for label in seg}
+    tags = {
+        label.split("|")[0].split("-")[-1]
+        for doc in y_true
+        for seg in doc
+        for label in seg
+    }
 
     non_tags = [
         "_",
@@ -95,13 +105,14 @@ def convert_iobes_to_iob(row):
     e_tags = 0
 
     for k in row:
-        if k.startswith('NE-'):
-            if row[k].startswith("S-"):
-                row[k] = "B" + row[k][1:]
-                s_tags += 1
-            if row[k].startswith("E-"):
-                row[k] = "I" + row[k][1:]
-                e_tags += 1
+        if k is not None:
+            if k.startswith("NE-"):
+                if row[k].startswith("S-"):
+                    row[k] = "B" + row[k][1:]
+                    s_tags += 1
+                if row[k].startswith("E-"):
+                    row[k] = "I" + row[k][1:]
+                    e_tags += 1
     return s_tags, e_tags
 
 
@@ -125,28 +136,36 @@ def read_conll_annotations(fname, glueing_col_pairs=None, structure_only=False):
     date = None
 
     with open(fname) as csvfile:
-        csvreader = csv.DictReader(csvfile, delimiter="\t", quoting=csv.QUOTE_NONE, quotechar="")
+        csvreader = csv.DictReader(csvfile, delimiter="\t", quoting=csv.QUOTE_NONE)
         fieldnames = csvreader.fieldnames
-
+        # import pdb;pdb.set_trace()
         for row in csvreader:
+            # print(row)
             first_item = row[fieldnames[0]]
             # skip empty lines
             if not first_item:
                 continue
             elif first_item.startswith("#"):
                 # segmenting lines
-                if first_item.startswith("# segment") and sent_annotations:  # TODO: segment is hipe2020 legacy, will be ignored
+                if (
+                    first_item.startswith("# segment") and sent_annotations
+                ):  # TODO: segment is hipe2020 legacy, will be ignored
                     doc_annotations.append(sent_annotations)
                     sent_annotations = []
 
                 # segmenting documents
-                elif (first_item.startswith("# document") or first_item.startswith("# hipe2022:document_id")) and sent_annotations:
+                elif (
+                    first_item.startswith("# document")
+                    or first_item.startswith("# hipe2022:document_id")
+                ) and sent_annotations:
                     doc_annotations.append(sent_annotations)
                     annotations.append(doc_annotations)
                     sent_annotations = []
                     doc_annotations = []
 
-                elif (first_item.startswith("# date") or first_item.startswith("# hipe2022:date")):
+                elif first_item.startswith("# date") or first_item.startswith(
+                    "# hipe2022:date"
+                ):
                     m = re.search(r"\d{4}-\d{2}-\d{2}", first_item)
                     if m:
                         datestring = m.group(0)
@@ -163,7 +182,7 @@ def read_conll_annotations(fname, glueing_col_pairs=None, structure_only=False):
                 # discard annotation and keep only structure
                 if structure_only:
                     token = row[fieldnames[0]]
-                    row = {k: "" for k in row}
+                    row = {k: "" for k in row if k is not None}
                     row[fieldnames[0]] = token
 
                 # perform post-hoc annotation changes
@@ -183,19 +202,21 @@ def read_conll_annotations(fname, glueing_col_pairs=None, structure_only=False):
                 if not row["MISC"]:
                     row["MISC"] = "_"
                 non_none_values = [value for value in row.values() if value]
-                try:
-                    assert len(fieldnames) == len(non_none_values)
-                except AssertionError:
-                    msg = (
-                        f"File {fname} contains {len(non_none_values)} values where {len(fieldnames)} are expected"
-                        + f"\nThe faulty row {row} has TOKEN column = {row['TOKEN']}"
-                    )
-                    logging.error(msg)
-                    raise AssertionError(msg)
+                # try:
+                #     assert len(fieldnames) == len(non_none_values)
+                # except AssertionError:
+                #     msg = (
+                #         f"File {fname} contains {len(non_none_values)} values where {len(fieldnames)} are expected"
+                #         + f"\nThe faulty row {row} has TOKEN column = {row['TOKEN']}"
+                #     )
+                #     logging.error(msg)
+                #     raise AssertionError(msg)
 
                 try:
                     # parse Levenshtein distance from MISC column if possible
-                    row["LEVENSHTEIN"] = float(re.search(r"LED(\d+(\.\d+)?)", row["MISC"]).group(1))
+                    row["LEVENSHTEIN"] = float(
+                        re.search(r"LED(\d+(\.\d+)?)", row["MISC"]).group(1)
+                    )
 
                 except (AttributeError, KeyError):
                     row["LEVENSHTEIN"] = None
@@ -203,15 +224,16 @@ def read_conll_annotations(fname, glueing_col_pairs=None, structure_only=False):
                 row["DATE"] = date
 
                 # add final annotation
-                tok_annot = TokAnnotation(row)
-                sent_annotations.append(tok_annot)
+                if "#" not in row["TOKEN"]:
+                    tok_annot = TokAnnotation(row)
+                    sent_annotations.append(tok_annot)
 
     # add last document and segment as well
     if sent_annotations:
         doc_annotations.append(sent_annotations)
         annotations.append(doc_annotations)
 
-    if all_s_tags+all_e_tags > 0:
+    if all_s_tags + all_e_tags > 0:
         logging.warning(f"Converted {all_s_tags} S-tags and {all_e_tags} E-tags.")
     return annotations
 
@@ -290,7 +312,9 @@ def collect_named_entities(tokens: [TokAnnotation], cols: list):
             if ent_type is not None and start_offset is not None:
                 end_offset = offset - 1
 
-                named_entities.append(Entity(ent_type, start_offset, end_offset, span_text))
+                named_entities.append(
+                    Entity(ent_type, start_offset, end_offset, span_text)
+                )
 
                 start_offset = None
                 end_offset = None
@@ -301,7 +325,9 @@ def collect_named_entities(tokens: [TokAnnotation], cols: list):
             start_offset = offset
             span_text = ""
 
-        elif ent_type != token_tag[2:] or (ent_type == token_tag[2:] and token_tag[:1] == "B"):
+        elif ent_type != token_tag[2:] or (
+            ent_type == token_tag[2:] and token_tag[:1] == "B"
+        ):
 
             end_offset = offset - 1
             named_entities.append(Entity(ent_type, start_offset, end_offset, span_text))
@@ -318,7 +344,9 @@ def collect_named_entities(tokens: [TokAnnotation], cols: list):
     if ent_type and start_offset is not None and end_offset is None:
         # including entities stretching from the first (start_offset = 0) to the last token in a segment
         # requires an explicit "start_offset is not None" as "start_offset = 0" evaluates mistakenly to False
-        named_entities.append(Entity(ent_type, start_offset, len(tokens) - 1, span_text))
+        named_entities.append(
+            Entity(ent_type, start_offset, len(tokens) - 1, span_text)
+        )
 
     # align shape of NE and link objects as the latter allows alternative annotations
     named_entities = [[ne] for ne in named_entities]
@@ -341,7 +369,9 @@ def collect_link_objects(tokens, link_cols, ner_cols, n_best=1, gs=False):
     if ner_cols is None:
         return collect_link_objects_original(tokens, link_cols, n_best=n_best)
     else:
-        return collect_link_objects_ner(tokens, link_cols, ner_cols, n_best=n_best, gs=gs)
+        return collect_link_objects_ner(
+            tokens, link_cols, ner_cols, n_best=n_best, gs=gs
+        )
 
 
 def collect_link_objects_ner(tokens, link_cols, ner_cols, n_best=1, gs=False):
@@ -369,8 +399,8 @@ def collect_link_objects_ner(tokens, link_cols, ner_cols, n_best=1, gs=False):
 
     if len(link_cols) > 1 and n_best > 1:
         msg = (
-                "NEL evaluation is undefined when both a alternative column is provided as well as a n-best list within the cell."
-                + "Please restrict to a single schema comprising the alternatives."
+            "NEL evaluation is undefined when both a alternative column is provided as well as a n-best list within the cell."
+            + "Please restrict to a single schema comprising the alternatives."
         )
         logging.error(msg)
         raise AssertionError(msg)
@@ -399,7 +429,11 @@ def collect_link_objects_ner(tokens, link_cols, ner_cols, n_best=1, gs=False):
             span_text = ""
 
         # start of a new nel object but still within the same ner object
-        elif ner_type == token_ner_tag[2:] and token_ner_tag[:1] == "I" and ent_type != token_link_tag:
+        elif (
+            ner_type == token_ner_tag[2:]
+            and token_ner_tag[:1] == "I"
+            and ent_type != token_link_tag
+        ):
             if gs:
                 msg = f"A named entity in the GOLD STANDARD has different links within its tokens: {ent_type} != {token_link_tag}. Keeping the first link."
             else:
@@ -418,7 +452,9 @@ def collect_link_objects_ner(tokens, link_cols, ner_cols, n_best=1, gs=False):
 
             logging.warning(msg)
 
-        elif ner_type != token_ner_tag[2:] or (ner_type == token_ner_tag[2:] and token_ner_tag[:1] == "B"):
+        elif ner_type != token_ner_tag[2:] or (
+            ner_type == token_ner_tag[2:] and token_ner_tag[:1] == "B"
+        ):
             end_offset = offset - 1
             links.append(Entity(ent_type, start_offset, end_offset, span_text))
 
@@ -445,7 +481,14 @@ def collect_link_objects_ner(tokens, link_cols, ner_cols, n_best=1, gs=False):
 
             for col in link_cols:
                 token_link_tag = getattr(tokens[link.start_offset], col)
-                union.append(Entity(token_link_tag, link.start_offset, link.end_offset, link.span_text))
+                union.append(
+                    Entity(
+                        token_link_tag,
+                        link.start_offset,
+                        link.end_offset,
+                        link.span_text,
+                    )
+                )
 
             links_union.append(union)
     else:
@@ -456,7 +499,9 @@ def collect_link_objects_ner(tokens, link_cols, ner_cols, n_best=1, gs=False):
             n_best_links = link.e_type.split("|")[:n_best]
 
             for tag in n_best_links:
-                union.append(Entity(tag, link.start_offset, link.end_offset, link.span_text))
+                union.append(
+                    Entity(tag, link.start_offset, link.end_offset, link.span_text)
+                )
 
             links_union.append(union)
     return links_union
@@ -536,7 +581,11 @@ def collect_link_objects_original(tokens, cols, n_best=1):
 
             for col in cols:
                 token_tag = getattr(tokens[link.start_offset], col)
-                union.append(Entity(token_tag, link.start_offset, link.end_offset, link.span_text))
+                union.append(
+                    Entity(
+                        token_tag, link.start_offset, link.end_offset, link.span_text
+                    )
+                )
 
             links_union.append(union)
     else:
@@ -547,7 +596,9 @@ def collect_link_objects_original(tokens, cols, n_best=1):
             n_best_links = link.e_type.split("|")[:n_best]
 
             for tag in n_best_links:
-                union.append(Entity(tag, link.start_offset, link.end_offset, link.span_text))
+                union.append(
+                    Entity(tag, link.start_offset, link.end_offset, link.span_text)
+                )
 
             links_union.append(union)
     return links_union

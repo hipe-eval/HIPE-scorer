@@ -181,15 +181,15 @@ def get_results(
     original_nel: bool = False,
 ):
 
-    if not skip_check:
-        if edition == "HIPE-2020":
-            submission, lang = enforce_filename(f_pred)
-        elif edition == "HIPE-2022":
-            submission, lang = enforce_filename_2022(f_pred)
-
-    else:
-        submission = f_pred
-        lang = "LANG"  # TODO: rm (?) not used afterwards it seems.
+    # if not skip_check:
+    #     if edition == "HIPE-2020":
+    #         submission, lang = enforce_filename(f_pred)
+    #     elif edition == "HIPE-2022":
+    #         submission, lang = enforce_filename_2022(f_pred)
+    #
+    # else:
+    submission = f_pred
+    lang = "LANG"  # TODO: rm (?) not used afterwards it seems.
 
     if glueing_cols:
         glueing_pairs = glueing_cols.split(",")

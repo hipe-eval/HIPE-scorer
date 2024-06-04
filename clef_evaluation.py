@@ -95,14 +95,23 @@ def enforce_filename_2022(fname: str):
         submission = f_obj.stem
         suffix = f_obj.suffix
         team, bundle, dataset, lang, run_nb = submission.split("_")
-        logging.info(f"team {team} bundle {bundle} dataset {dataset} lang {lang} run_nb {run_nb}")
+        logging.info(
+            f"team {team} bundle {bundle} dataset {dataset} lang {lang} run_nb {run_nb}"
+        )
         bundle = int(bundle.lstrip("bundle"))
 
         assert suffix == ".tsv", f"Problem with file suffix {suffix}"
-        assert bundle in range(1, 6) , f"Problem with file bundle {bundle}"
-        assert dataset in {"ajmc", "newseye", "hipe2020", "topres19th", "sonar", "letemps"}, f"Problem with dataset {dataset}"
+        assert bundle in range(1, 6), f"Problem with file bundle {bundle}"
+        assert dataset in {
+            "ajmc",
+            "newseye",
+            "hipe2020",
+            "topres19th",
+            "sonar",
+            "letemps",
+        }, f"Problem with dataset {dataset}"
         assert lang in {"de", "fr", "en", "sv", "fi"}, f"Problem with language {lang}"
-        assert int(run_nb) in range(1,3), f"Problem with run number {run_nb}"
+        assert int(run_nb) in range(1, 3), f"Problem with run number {run_nb}"
 
     except (ValueError, AssertionError) as e:
         logging.error(e)
@@ -139,20 +148,24 @@ def evaluation_wrapper(
             logging.error(msg)
             raise AssertionError(msg)
 
-    for (col_id, col), noise_level, time_period in itertools.product(enumerate(cols), noise_levels, time_periods):
+    for (col_id, col), noise_level, time_period in itertools.product(
+        enumerate(cols), noise_levels, time_periods
+    ):
         additional_col = None
         if additional_cols is not None:
             additional_col = additional_cols[col_id]
 
-        eval_global, eval_per_tag = evaluator.evaluate(  # TODO: reorder passed args to match order of eval function def
-            col,
-            eval_type=eval_type,
-            merge_lines=True,  # TODO: should be false for all hipe 2022
-            n_best=n_best,
-            noise_level=noise_level,
-            time_period=time_period,
-            tags=tags,
-            additional_columns=additional_col
+        eval_global, eval_per_tag = (
+            evaluator.evaluate(  # TODO: reorder passed args to match order of eval function def
+                col,
+                eval_type=eval_type,
+                merge_lines=True,  # TODO: should be false for all hipe 2022
+                n_best=n_best,
+                noise_level=noise_level,
+                time_period=time_period,
+                tags=tags,
+                additional_columns=additional_col,
+            )
         )
 
         time_period = define_time_label(time_period)
@@ -181,15 +194,15 @@ def get_results(
     original_nel: bool = False,
 ):
 
-    # if not skip_check:
-    #     if edition == "HIPE-2020":
-    #         submission, lang = enforce_filename(f_pred)
-    #     elif edition == "HIPE-2022":
-    #         submission, lang = enforce_filename_2022(f_pred)
-    #
-    # else:
-    submission = f_pred
-    lang = "LANG"  # TODO: rm (?) not used afterwards it seems.
+    if not skip_check:
+        if edition == "HIPE-2020":
+            submission, lang = enforce_filename(f_pred)
+        elif edition == "HIPE-2022":
+            submission, lang = enforce_filename_2022(f_pred)
+
+    else:
+        submission = f_pred
+        lang = "LANG"  # TODO: rm (?) not used afterwards it seems.
 
     if glueing_cols:
         glueing_pairs = glueing_cols.split(",")
@@ -207,9 +220,17 @@ def get_results(
 
     if task in ("nerc_fine", "nerc_coarse"):
         if edition == "HIPE-2022":
-            ner_columns = FINE_COLUMNS_HIPE2022 if task == "nerc_fine" else COARSE_COLUMNS_HIPE2022
+            ner_columns = (
+                FINE_COLUMNS_HIPE2022
+                if task == "nerc_fine"
+                else COARSE_COLUMNS_HIPE2022
+            )
         elif edition == "HIPE-2020":
-            ner_columns = FINE_COLUMNS_HIPE2020 if task == "nerc_fine" else COARSE_COLUMNS_HIPE2020
+            ner_columns = (
+                FINE_COLUMNS_HIPE2020
+                if task == "nerc_fine"
+                else COARSE_COLUMNS_HIPE2020
+            )
 
         eval_stats = evaluation_wrapper(
             evaluator,
@@ -226,12 +247,18 @@ def get_results(
         rows = []
         eval_stats = {}
 
-        nel_columns = NEL_COLUMNS_HIPE2020 if edition == "HIPE-2020" else NEL_COLUMNS_HIPE2022
+        nel_columns = (
+            NEL_COLUMNS_HIPE2020 if edition == "HIPE-2020" else NEL_COLUMNS_HIPE2022
+        )
 
         if original_nel:
             nel_additional_cols = None
         else:
-            nel_additional_cols = COARSE_COLUMNS_HIPE2020 if edition == "HIPE-2020" else COARSE_COLUMNS_HIPE2022
+            nel_additional_cols = (
+                COARSE_COLUMNS_HIPE2020
+                if edition == "HIPE-2020"
+                else COARSE_COLUMNS_HIPE2022
+            )
 
         for n in n_best:
             eval_stats[n] = evaluation_wrapper(
@@ -248,7 +275,7 @@ def get_results(
                 submission,
                 eval_stats[n],
                 n_best=n,
-                #regimes=["fuzzy"],
+                # regimes=["fuzzy"],
                 only_aggregated=True,
                 suffix=suffix,
             )
@@ -258,8 +285,12 @@ def get_results(
     suffix = "_" + suffix if suffix else ""
 
     f_sub = pathlib.Path(f_pred)
-    f_tsv = str(pathlib.Path(outdir) / f_sub.name.replace(".tsv", f"_{task}{suffix}.tsv"))
-    f_json = str(pathlib.Path(outdir) / f_sub.name.replace(".tsv", f"_{task}{suffix}.json"))
+    f_tsv = str(
+        pathlib.Path(outdir) / f_sub.name.replace(".tsv", f"_{task}{suffix}.tsv")
+    )
+    f_json = str(
+        pathlib.Path(outdir) / f_sub.name.replace(".tsv", f"_{task}{suffix}.json")
+    )
 
     # write condensed results to tsv
     with open(f_tsv, "w") as csvfile:
@@ -270,7 +301,9 @@ def get_results(
     # write detailed results to json
     with open(f_json, "w") as jsonfile:
         json.dump(
-            eval_stats, jsonfile, indent=4,
+            eval_stats,
+            jsonfile,
+            indent=4,
         )
 
 
@@ -286,7 +319,13 @@ def define_time_label(time_period):
     if time_period:
         date_start, date_end = time_period
 
-        if all([True for date in [date_start, date_end] if date.day == 1 and date.month == 1]):
+        if all(
+            [
+                True
+                for date in [date_start, date_end]
+                if date.day == 1 and date.month == 1
+            ]
+        ):
             # shorten label if only a year was provided (no particular month or day)
             date_start, date_end = date_start.strftime("%Y"), date_end.strftime("%Y")
         else:
@@ -298,7 +337,12 @@ def define_time_label(time_period):
 
 
 def assemble_tsv_output(
-    submission, eval_stats, n_best=1, regimes=["fuzzy", "strict"], only_aggregated=False, suffix="",
+    submission,
+    eval_stats,
+    n_best=1,
+    regimes=["fuzzy", "strict"],
+    only_aggregated=False,
+    suffix="",
 ):
 
     metrics = ("P", "R", "F1")
@@ -404,7 +448,7 @@ def main(args):
     log_fmt = f"%(asctime)s - %(levelname)s - {f_pred} - %(message)s"
     logging.basicConfig(fmt=log_fmt)
     # log warnings to file
-    handler1 = logging.FileHandler(f_log,mode="w")
+    handler1 = logging.FileHandler(f_log, mode="w")
     handler1.setLevel(logging.WARNING)
     handler1.setFormatter(logging.Formatter(fmt=log_fmt))
     logging.getLogger().addHandler(handler1)
@@ -428,8 +472,12 @@ def main(args):
     if noise_level:
         noise_levels = [level.split("-") for level in noise_level.split(",") if level]
         logging.warning(f"noise_level `{noise_level}` noise_levels {noise_levels}")
-        assert len(noise_levels[0]) == 2 ,f"found invalid noise level argument {noise_level} leading to {noise_levels}"
-        noise_levels = [tuple([float(lower), float(upper)]) for lower, upper in noise_levels]
+        assert (
+            len(noise_levels[0]) == 2
+        ), f"found invalid noise level argument {noise_level} leading to {noise_levels}"
+        noise_levels = [
+            tuple([float(lower), float(upper)]) for lower, upper in noise_levels
+        ]
 
         # add case to evaluate on all entities regardless of noise
         noise_levels = [None] + noise_levels
@@ -446,7 +494,10 @@ def main(args):
             ]
         except ValueError:
             time_periods = [
-                (datetime.strptime(period[0], "%Y/%m/%d"), datetime.strptime(period[1], "%Y/%m/%d"))
+                (
+                    datetime.strptime(period[0], "%Y/%m/%d"),
+                    datetime.strptime(period[1], "%Y/%m/%d"),
+                )
                 for period in time_periods
             ]
         # add case to evaluate on all entities regardless of period
@@ -481,7 +532,9 @@ if __name__ == "__main__":
 
     tasks = ("nerc_coarse", "nerc_fine", "nel")
     if args["--task"] not in tasks:
-        msg = "Please restrict to one of the available evaluation tasks: " + ", ".join(tasks)
+        msg = "Please restrict to one of the available evaluation tasks: " + ", ".join(
+            tasks
+        )
         logging.error(msg)
         sys.exit(1)
     logging.debug(f"ARGUMENTS {args}")
